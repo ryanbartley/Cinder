@@ -48,6 +48,25 @@ typedef std::shared_ptr<class GlslProg> GlslProgRef;
 
 class GlslProg : public std::enable_shared_from_this<GlslProg> {
   public:
+	
+	struct Uniform {
+		std::string		mName;
+		GLint			mSize = 0, mLoc = -1;
+		GLenum			mType;
+		UniformSemantic mSemantic = UniformSemantic::USER_DEFINED_UNIFORM;
+	};
+	
+	struct UniformBlock {
+		
+	};
+	
+	struct Attribute {
+		std::string		mName;
+		GLint			mSize = 0, mLoc = -1;
+		GLenum			mType;
+		geom::Attrib	mSemantic = geom::Attrib::NUM_ATTRIBS;
+	};
+	
 	struct Format {
 		//! Defaults to specifying location 0 for the \c geom::Attrib::POSITION semantic
 		Format();
@@ -130,6 +149,10 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 		void				setLabel( const std::string &label ) { mLabel = label; }
 		//! Sets the debugging label associated with the Program. Calls glObjectLabel() when available.
 		Format&				label( const std::string &label ) { setLabel( label ); return *this; }
+		const std::vector<Uniform>&		getUniforms() const { return mUniforms; }
+		const std::vector<Attribute>&	getAttributes() const { return mAttributes; }
+		std::vector<Uniform>&			getUniforms() { return mUniforms; }
+		std::vector<Attribute>&			getAttributes() { return mAttributes; }
 		
 	  protected:
 		std::string					mVertexShader;
@@ -148,6 +171,9 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 		std::map<geom::Attrib,GLint>			mAttribSemanticLocMap;
 		std::map<std::string,UniformSemantic>	mUniformSemanticMap;
 		std::map<std::string,geom::Attrib>		mAttribSemanticMap;
+		
+		std::vector<Attribute>					mAttributes;
+		std::vector<Uniform>					mUniforms;
 		
 		
 		std::string								mLabel;
@@ -216,15 +242,13 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	void    uniform( int location, const mat4 *data, int count, bool transpose = false ) const;
 	void    uniform( const std::string &name, const mat4 *data, int count, bool transpose = false ) const;
 
-	//! Returns a std::map from the uniform name to its OpenGL type (GL_BOOL, GL_FLOAT_VEC3, etc)
-	const std::map<std::string,GLenum>&		getActiveUniformTypes() const;
-	//! Returns a std::map from the attribute name to its OpenGL type (GL_BOOL, GL_FLOAT_VEC3, etc)
-	const std::map<std::string,GLenum>&		getActiveAttribTypes() const;
-
-	//! Returns the map between uniform semantics and active uniforms' names
-	const UniformSemanticMap&		getUniformSemantics() const;
-	//! Returns the map between attribute semantics and active attributes' names
-	const AttribSemanticMap&		getAttribSemantics() const;
+//	//! Returns the map between uniform semantics and active uniforms' names
+//	const UniformSemanticMap&		getUniformSemantics() const;
+//	//! Returns the map between attribute semantics and active attributes' names
+//	const AttribSemanticMap&		getAttribSemantics() const;
+	
+	const std::vector<Attribute>&	getActiveAttributes() const { return mAttributes; }
+	const std::vector<Uniform>&		getActiveUniforms() const { return mUniforms; }
 	
 	bool	hasAttribSemantic( geom::Attrib semantic ) const;
 	GLint	getAttribSemanticLocation( geom::Attrib semantic ) const;
@@ -262,26 +286,21 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	void			loadShader( const std::string &shaderSource, GLint shaderType );
 	void			attachShaders();
 	void			link();
+	void			cacheActiveAttribs();
+	void			cacheActiveUniforms();
 	
 	GLuint									mHandle;
-
-	mutable std::map<std::string, int>		mUniformLocs;
-	mutable bool							mActiveUniformTypesCached;
-	mutable std::map<std::string, GLenum>	mActiveUniformTypes;
-
-	mutable std::map<std::string, int>		mAttribLocs; // map between name and location
-	mutable bool							mActiveAttribTypesCached;
-	mutable std::map<std::string, GLenum>	mActiveAttribTypes; // map between name and type, ie GL_FLOAT_VEC2, GL_FLOAT_MAT2x4, etc
 	
 	static UniformSemanticMap				sDefaultUniformNameToSemanticMap;
-	UniformSemanticMap						mUniformNameToSemanticMap;
-	mutable bool							mUniformSemanticsCached;
-	mutable UniformSemanticMap				mUniformSemantics;
-	
 	static AttribSemanticMap				sDefaultAttribNameToSemanticMap;
-	AttribSemanticMap						mAttribNameToSemanticMap;
+	
+	std::vector<Attribute>					mAttributes;
+	mutable bool							mActiveAttribTypesCached;
 	mutable bool							mAttribSemanticsCached;
-	mutable AttribSemanticMap				mAttribSemantics;
+	std::vector<Uniform>					mUniforms;
+	mutable bool							mActiveUniformTypesCached;
+	mutable bool							mUniformSemanticsCached;
+	
 	// enumerates the uniforms we've already logged as missing so that we don't flood the log with the same message
 	mutable std::set<std::string>			mLoggedMissingUniforms;
 
