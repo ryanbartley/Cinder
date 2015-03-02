@@ -21,8 +21,8 @@ class SuperformulaGpuApp : public AppNative {
 	void	setupGeometry();
 	
 	CameraPersp				mCam;
-	gl::BatchRef			mBatch, mNormalsBatch;
-	gl::GlslProgRef			mGlsl, mNormalsGlsl;
+    gl::BatchRef			mBatch; //mNormalsBatch;
+    gl::GlslProgRef			mGlsl; //mNormalsGlsl;
 	mat4					mRotation;
 #if ! defined( CINDER_GL_ES )
 	params::InterfaceGlRef	mParams;
@@ -49,7 +49,7 @@ void SuperformulaGpuApp::setupGeometry()
 {
 	auto plane = geom::Plane().subdivisions( ivec2( mSubdivisions, mSubdivisions ) );
 	mBatch = gl::Batch::create( plane, mGlsl );
-	mNormalsBatch = gl::Batch::create( geom::VertexNormalLines( plane, 0.0f ), mNormalsGlsl );
+//	//mNormalsBatch = gl::Batch::create( geom::VertexNormalLines( plane, 0.0f ), //mNormalsGlsl );
 }
 
 void SuperformulaGpuApp::setup()
@@ -95,14 +95,14 @@ void SuperformulaGpuApp::setup()
 
 #if defined( CINDER_GL_ES_3 )
 	mGlsl = gl::GlslProg::create( loadAsset( "shader_es3.vert" ), loadAsset( "shader_es3.frag" ) );
-	mNormalsGlsl = gl::GlslProg::create( gl::GlslProg::Format().vertex( loadAsset( "normals_shader_es3.vert" ) )
+	//mNormalsGlsl = gl::GlslProg::create( gl::GlslProg::Format().vertex( loadAsset( "normals_shader_es3.vert" ) )
 											.fragment( loadAsset( "normals_shader_es3.frag" ) )
 											.attrib( geom::CUSTOM_0, "vNormalWeight" ) );
 #else
 	mGlsl = gl::GlslProg::create( loadAsset( "shader.vert" ), loadAsset( "shader.frag" ) );
-	mNormalsGlsl = gl::GlslProg::create( gl::GlslProg::Format().vertex( loadAsset( "normals_shader.vert" ) )
-											.fragment( loadAsset( "normals_shader.frag" ) )
-											.attrib( geom::CUSTOM_0, "vNormalWeight" ) );
+	//mNormalsGlsl = gl::GlslProg::create( gl::GlslProg::Format().vertex( loadAsset( "normals_shader.vert" ) )
+											//.fragment( loadAsset( "normals_shader.frag" ) )
+											//.attrib( geom::CUSTOM_0, "vNormalWeight" ) );
 #endif
 
 	// allocate our UBO
@@ -111,7 +111,7 @@ void SuperformulaGpuApp::setup()
 	mFormulaParamsUbo->bindBufferBase( 0 );
 	// and finally tell the shaders that their uniform buffer 'FormulaParams' can be found at buffer base 0
 	mGlsl->uniformBlock( "FormulaParams", 0 );
-	mNormalsGlsl->uniformBlock( "FormulaParams", 0 );
+	//mNormalsGlsl->uniformBlock( "FormulaParams", 0 );
 
 	setupGeometry();
 
@@ -134,7 +134,7 @@ void SuperformulaGpuApp::update()
 	// buffer our data to our UBO to reflect any changed parameters
 	mFormulaParamsUbo->bufferSubData( 0, sizeof( mFormulaParams ), &mFormulaParams );
 	
-	mNormalsBatch->getGlslProg()->uniform( "uNormalsLength", mNormalsLength );
+	//mNormalsBatch->getGlslProg()->uniform( "uNormalsLength", mNormalsLength );
 	mBatch->getGlslProg()->uniform( "uCheckerFrequency", mCheckerFrequency );
 }
 
@@ -148,7 +148,7 @@ void SuperformulaGpuApp::draw()
 		mBatch->draw();
 		gl::color( 0.25f, 0.5f, 1.0f, 1 );
 		if( mDrawNormals )
-			mNormalsBatch->draw();
+			//mNormalsBatch->draw();
 	gl::popMatrices();
 
 #if ! defined( CINDER_GL_ES )
