@@ -61,8 +61,10 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 		std::string mName;
 		GLint mSize = 0, mLoc = -1;
 		GLint mBlockBinding;
+		//! Contains info on each of the active uniforms contained by this Uniform Block
 		std::vector<Uniform> mActiveUniforms;
-		std::vector<std::vector<GLint>> mActiveUniformInfo;
+		//! Includes information attached to GL_UNIFORM_OFFSET, GL_UNIFORM_ARRAY_STRIDE, GL_UNIFORM_MATRIX_STRIDE
+		std::map<GLenum, std::vector<GLint>> mActiveUniformInfo;
 	};
 #endif
 	
@@ -71,6 +73,13 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 		GLint			mSize = 0, mLoc = -1;
 		GLenum			mType;
 		geom::Attrib	mSemantic = geom::Attrib::NUM_ATTRIBS;
+	};
+	
+	struct TransformFeedbackVaryings {
+		std::string		mName;
+		GLint			mSize = 0;
+		GLenum			mType;
+		Attribute*		mAttachedAttrib;
 	};
 	
 	struct Format {
@@ -138,16 +147,6 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 		//! Returns the map between output variable names and their bound color numbers
 		const std::map<std::string,GLuint>&	getFragDataLocations() const { return mFragDataLocations; }
 #endif
-
-		//! Returns the map between uniform semantics and uniform names
-		const std::map<std::string,UniformSemantic>&	getUniformSemantics() const { return mUniformSemanticMap; }
-		//! Returns the map between attribute semantics and attribute names
-		const std::map<std::string,geom::Attrib>&		getAttribSemantics() const { return mAttribSemanticMap; }
-		
-		//! Returns the map between attribute names and specified locations
-		const std::map<std::string,GLint>&	getAttribNameLocations() const { return mAttribNameLocMap; }
-		//! Returns the map between attribute semantics and specified locations
-		const std::map<geom::Attrib,GLint>&	getAttribSemanticLocations() const { return mAttribSemanticLocMap; }
 		
 		//! Returns the debugging label associated with the Program.
 		const std::string&	getLabel() const { return mLabel; }
@@ -173,11 +172,6 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 		std::vector<std::string>				mTransformVaryings;
 		std::map<std::string,GLuint>			mFragDataLocations;
 #endif
-		std::map<std::string,GLint>				mAttribNameLocMap;
-		std::map<geom::Attrib,GLint>			mAttribSemanticLocMap;
-		std::map<std::string,UniformSemantic>	mUniformSemanticMap;
-		std::map<std::string,geom::Attrib>		mAttribSemanticMap;
-		
 		std::vector<Attribute>					mAttributes;
 		std::vector<Uniform>					mUniforms;
 		
@@ -262,6 +256,9 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	
 	GLint	getAttribLocation( const std::string &name ) const;
 	GLint	getUniformLocation( const std::string &name ) const;
+	
+	const Uniform& getActiveUniform( const std::string &name ) const;
+	const Attribute&  getActiveAttrib( const std::string &name ) const;
 
 #if ! defined( CINDER_GL_ES_2 )
 	// Uniform blocks
@@ -294,6 +291,7 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	void			link();
 	void			cacheActiveAttribs();
 	void			cacheActiveUniforms();
+	void			cacheActiveTransformFeedbackVaryings();
 	
 	
 	GLuint									mHandle;
@@ -305,6 +303,8 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	bool									mActiveAttribsCached;
 	std::vector<Uniform>					mUniforms;
 	bool									mActiveUniformsCached;
+	std::vector<TransformFeedbackVaryings>  mActiveTransformFeedbackVaryings;
+	bool									mActiveTransformFeedbackVaryingsCached;
 	
 	
 	// enumerates the uniforms we've already logged as missing so that we don't flood the log with the same message
