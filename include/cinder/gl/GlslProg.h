@@ -272,7 +272,6 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	void	cacheActiveUniformBlocks();
 	
 	std::vector<UniformBlock>				mUniformBlocks;
-	bool									mActiveUniformBlocksCached;
 #endif
 
 	std::string		getShaderLog( GLuint handle ) const;
@@ -300,15 +299,12 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	static AttribSemanticMap				sDefaultAttribNameToSemanticMap;
 	
 	std::vector<Attribute>					mAttributes;
-	bool									mActiveAttribsCached;
 	std::vector<Uniform>					mUniforms;
-	bool									mActiveUniformsCached;
-	std::vector<TransformFeedbackVaryings>  mActiveTransformFeedbackVaryings;
-	bool									mActiveTransformFeedbackVaryingsCached;
+	std::vector<TransformFeedbackVaryings>  mTransformFeedbackVaryings;
 	
 	
 	// enumerates the uniforms we've already logged as missing so that we don't flood the log with the same message
-	mutable std::set<std::string>			mLoggedMissingUniforms;
+	mutable std::set<std::string>			mLoggedUniforms;
 
 	std::string								mLabel; // debug label
 
