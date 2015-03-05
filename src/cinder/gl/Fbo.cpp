@@ -38,7 +38,7 @@
 #include "cinder/gl/Environment.h"
 #include "cinder/Log.h"
 #include "cinder/Camera.h"
-#include "cinder/gl/ConstantStrings.h"
+#include "cinder/gl/ConstantConversions.h"
 #include "cinder/ip/Flip.h"
 
 using namespace std;
