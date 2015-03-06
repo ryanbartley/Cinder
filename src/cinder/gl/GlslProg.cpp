@@ -815,6 +815,14 @@ const GlslProg::Uniform* GlslProg::findUniform( const std::string &name ) const
 	}
 	return ret;
 }
+	
+void GlslProg::logMissingUniform( const std::string &name ) const
+{
+	if( mLoggedUniforms.count( name ) == 0 ) {
+		CI_LOG_E( "Unknown uniform: \"" << name << "\"" );
+		mLoggedUniforms.insert( name );
+	}
+}
     
 bool GlslProg::hasAttribSemantic( geom::Attrib semantic ) const
 {

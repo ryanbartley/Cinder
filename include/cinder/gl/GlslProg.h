@@ -213,6 +213,10 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	
 	GLuint			getHandle() const { return mHandle; }
 	
+	//! Possible implementation for uniform buffering with \a name.
+	template<typename T>
+	inline void	uniformTemp( const std::string &name, const T &data ) const;
+	
 	void	uniform( const std::string &name, bool data ) const;
 	void	uniform( int location, bool data ) const;
 	void	uniform( const std::string &name, int data ) const;
@@ -308,9 +312,24 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	void				cacheActiveAttribs();
 	Attribute*			findAttrib( const std::string &name );
 	const Attribute*	findAttrib( const std::string &name ) const;
+	//! Querys gl to provide all active uniforms outside of uniform blocks and caches them inside \a mUniforms.
 	void				cacheActiveUniforms();
+	//! Returns a pointer to the uniform named by \a name.
 	Uniform*			findUniform( const std::string &name );
+	//! Returns a const pointer to the uniform named by \a name.
 	const Uniform*		findUniform( const std::string &name ) const;
+	//! Logs a message to the user that the name provided doesn't exist in the uniform cache.
+	void				logMissingUniform( const std::string &name ) const;
+	//! Checks the validity of the settings on this uniform, specifically type and value
+	template<typename T>
+	inline bool			validateUniform( const Uniform &uniform, const T &val ) const;
+	//! Implementing later for CPU Uniform Buffer Cache.
+	template<typename T>
+	inline bool			checkUniformValue( const Uniform &uniform, const T &val ) const;
+	//! Checks the type of the uniform against the provided type of data in validateUniform. If the provided
+	//! type, \a uniformType, and the type T match this function returns true, otherwise it returns false.
+	template<typename T>
+	inline bool			checkUniformType( GLenum uniformType ) const;
 #if ! defined( CINDER_GL_ES_2 )
 	void				cacheActiveUniformBlocks();
 	UniformBlock*		findUniformBlock( const std::string &name );
@@ -354,6 +373,82 @@ class GlslProg : public std::enable_shared_from_this<GlslProg> {
 	friend class Context;
 	friend std::ostream& operator<<( std::ostream &os, const GlslProg &rhs );
 };
+	
+
+	
+template<typename T>
+inline void GlslProg::uniformTemp( const std::string &name, const T &data ) const
+{	
+	auto found = findUniform( name );
+	if( ! found ) {
+		logMissingUniform( name );
+		return;
+	}
+	if( validateUniform( found, data ) )
+		uniform( found->mLoc, data );
+}
+	
+template<typename T>
+inline bool GlslProg::validateUniform( const Uniform &uniform, const T &val ) const
+{
+	if( ! checkUniformType<T>( uniform.mType ) && mLoggedUniforms.count( uniform.mName ) == 0 ) {
+		//		CI_LOG_W("Uniform type mismatch for \"" << found->mName << "\", expected "
+		//				 << gl::constantToString(found->mType) << " and received a float.");
+		mLoggedUniforms.insert( uniform.mName );
+		return false;
+	}
+	else
+		return true;
+}
+	
+template<typename T>
+inline bool GlslProg::checkUniformType( GLenum uniformType ) const { return false; }
+template<>
+inline bool GlslProg::checkUniformType<bool>( GLenum uniformType ) const { return GL_BOOL == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<int>( GLenum uniformType ) const
+{
+	return GL_INT == uniformType ||
+			GL_SAMPLER_2D == uniformType ||
+			GL_SAMPLER_1D == uniformType ||
+			GL_SAMPLER_3D == uniformType ||
+			GL_SAMPLER_2D_SHADOW == uniformType ||
+			GL_BOOL == uniformType ||
+			GL_SAMPLER_CUBE == uniformType;
+}
+template<>
+inline bool GlslProg::checkUniformType<float>( GLenum uniformType ) const { return GL_FLOAT == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<uint32_t>( GLenum uniformType ) const { return GL_UNSIGNED_INT == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<glm::bvec2>( GLenum uniformType ) const { return GL_BOOL_VEC2 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<ivec2>( GLenum uniformType ) const { return GL_INT_VEC2 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<vec2>( GLenum uniformType ) const { return GL_FLOAT_VEC2 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<uvec2>( GLenum uniformType ) const { return GL_UNSIGNED_INT_VEC2 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<glm::bvec3>( GLenum uniformType ) const { return GL_BOOL_VEC3 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<ivec3>( GLenum uniformType ) const { return GL_INT_VEC3 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<vec3>( GLenum uniformType ) const { return GL_FLOAT_VEC3 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<uvec3>( GLenum uniformType ) const { return GL_UNSIGNED_INT_VEC3 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<glm::bvec4>( GLenum uniformType ) const { return GL_BOOL_VEC4 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<ivec4>( GLenum uniformType ) const { return GL_INT_VEC4 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<vec4>( GLenum uniformType ) const { return GL_FLOAT_VEC4 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<uvec4>( GLenum uniformType ) const { return GL_UNSIGNED_INT_VEC4 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<mat4>( GLenum uniformType ) const { return GL_FLOAT_MAT4 == uniformType; }
+template<>
+inline bool GlslProg::checkUniformType<mat3>( GLenum uniformType ) const { return GL_FLOAT_MAT3 == uniformType; }
+
 
 class GlslProgExc : public cinder::gl::Exception {
   public:
