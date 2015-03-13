@@ -16,9 +16,6 @@
 		0003F3DE1992D64100647C8B /* BufferTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C01992D64100647C8B /* BufferTexture.cpp */; };
 		0003F3DF1992D64100647C8B /* BufferTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C01992D64100647C8B /* BufferTexture.cpp */; };
 		0003F3E01992D64100647C8B /* BufferTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C01992D64100647C8B /* BufferTexture.cpp */; };
-		0003F3E11992D64100647C8B /* ConstantStrings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C11992D64100647C8B /* ConstantStrings.cpp */; };
-		0003F3E21992D64100647C8B /* ConstantStrings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C11992D64100647C8B /* ConstantStrings.cpp */; };
-		0003F3E31992D64100647C8B /* ConstantStrings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C11992D64100647C8B /* ConstantStrings.cpp */; };
 		0003F3E41992D64100647C8B /* Context.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C21992D64100647C8B /* Context.cpp */; };
 		0003F3E51992D64100647C8B /* Context.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C21992D64100647C8B /* Context.cpp */; };
 		0003F3E61992D64100647C8B /* Context.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0003F3C21992D64100647C8B /* Context.cpp */; };
@@ -85,9 +82,6 @@
 		0003F43F1992D67300647C8B /* BufferTexture.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F4281992D67300647C8B /* BufferTexture.h */; };
 		0003F4401992D67300647C8B /* BufferTexture.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F4281992D67300647C8B /* BufferTexture.h */; };
 		0003F4411992D67300647C8B /* BufferTexture.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F4281992D67300647C8B /* BufferTexture.h */; };
-		0003F4421992D67300647C8B /* ConstantStrings.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F4291992D67300647C8B /* ConstantStrings.h */; };
-		0003F4431992D67300647C8B /* ConstantStrings.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F4291992D67300647C8B /* ConstantStrings.h */; };
-		0003F4441992D67300647C8B /* ConstantStrings.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F4291992D67300647C8B /* ConstantStrings.h */; };
 		0003F4451992D67300647C8B /* Context.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F42A1992D67300647C8B /* Context.h */; };
 		0003F4461992D67300647C8B /* Context.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F42A1992D67300647C8B /* Context.h */; };
 		0003F4471992D67300647C8B /* Context.h in Headers */ = {isa = PBXBuildFile; fileRef = 0003F42A1992D67300647C8B /* Context.h */; };
@@ -1101,6 +1095,12 @@
 		B06DE70319C74935008B9E1B /* Query.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B06DE70219C74935008B9E1B /* Query.cpp */; };
 		B06DE70419C74935008B9E1B /* Query.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B06DE70219C74935008B9E1B /* Query.cpp */; };
 		B06DE70519C74935008B9E1B /* Query.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B06DE70219C74935008B9E1B /* Query.cpp */; };
+		B3B7E8B31AB3610F00D80463 /* ConstantConversions.h in Headers */ = {isa = PBXBuildFile; fileRef = B3B7E8B21AB3610F00D80463 /* ConstantConversions.h */; };
+		B3B7E8B41AB3610F00D80463 /* ConstantConversions.h in Headers */ = {isa = PBXBuildFile; fileRef = B3B7E8B21AB3610F00D80463 /* ConstantConversions.h */; };
+		B3B7E8B51AB3610F00D80463 /* ConstantConversions.h in Headers */ = {isa = PBXBuildFile; fileRef = B3B7E8B21AB3610F00D80463 /* ConstantConversions.h */; };
+		B3B7E8B71AB3613500D80463 /* ConstantConversions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3B7E8B61AB3613500D80463 /* ConstantConversions.cpp */; };
+		B3B7E8B81AB3613500D80463 /* ConstantConversions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3B7E8B61AB3613500D80463 /* ConstantConversions.cpp */; };
+		B3B7E8B91AB3613500D80463 /* ConstantConversions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3B7E8B61AB3613500D80463 /* ConstantConversions.cpp */; };
 		C70E19FF106AA38700E63577 /* Buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = C70E19FE106AA38700E63577 /* Buffer.h */; };
 		C70E1A03106AA39D00E63577 /* Buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C70E1A01106AA39D00E63577 /* Buffer.cpp */; };
 		C727BFE5121B3AE600192073 /* Capture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007438400EA7924F005DD3E6 /* Capture.cpp */; };
@@ -1124,7 +1124,6 @@
 		0003F3BE1992D64100647C8B /* Batch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Batch.cpp; path = gl/Batch.cpp; sourceTree = "<group>"; };
 		0003F3BF1992D64100647C8B /* BufferObj.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BufferObj.cpp; path = gl/BufferObj.cpp; sourceTree = "<group>"; };
 		0003F3C01992D64100647C8B /* BufferTexture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BufferTexture.cpp; path = gl/BufferTexture.cpp; sourceTree = "<group>"; };
-		0003F3C11992D64100647C8B /* ConstantStrings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConstantStrings.cpp; path = gl/ConstantStrings.cpp; sourceTree = "<group>"; };
 		0003F3C21992D64100647C8B /* Context.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Context.cpp; path = gl/Context.cpp; sourceTree = "<group>"; };
 		0003F3C31992D64100647C8B /* Environment.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = Environment.cpp; path = gl/Environment.cpp; sourceTree = "<group>"; };
 		0003F3C41992D64100647C8B /* EnvironmentCore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = EnvironmentCore.cpp; path = gl/EnvironmentCore.cpp; sourceTree = "<group>"; };
@@ -1149,7 +1148,6 @@
 		0003F4261992D67300647C8B /* Batch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Batch.h; path = gl/Batch.h; sourceTree = "<group>"; };
 		0003F4271992D67300647C8B /* BufferObj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferObj.h; path = gl/BufferObj.h; sourceTree = "<group>"; };
 		0003F4281992D67300647C8B /* BufferTexture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BufferTexture.h; path = gl/BufferTexture.h; sourceTree = "<group>"; };
-		0003F4291992D67300647C8B /* ConstantStrings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConstantStrings.h; path = gl/ConstantStrings.h; sourceTree = "<group>"; };
 		0003F42A1992D67300647C8B /* Context.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Context.h; path = gl/Context.h; sourceTree = "<group>"; };
 		0003F42B1992D67300647C8B /* Environment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Environment.h; path = gl/Environment.h; sourceTree = "<group>"; };
 		0003F42C1992D67300647C8B /* Fbo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Fbo.h; path = gl/Fbo.h; sourceTree = "<group>"; };
@@ -1601,6 +1599,8 @@
 		5391FD670E957646002A13D5 /* KeyEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = KeyEvent.h; path = app/KeyEvent.h; sourceTree = "<group>"; };
 		B0245F5819BEDF3200BC878D /* Query.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Query.h; path = gl/Query.h; sourceTree = "<group>"; };
 		B06DE70219C74935008B9E1B /* Query.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Query.cpp; path = gl/Query.cpp; sourceTree = "<group>"; };
+		B3B7E8B21AB3610F00D80463 /* ConstantConversions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConstantConversions.h; path = gl/ConstantConversions.h; sourceTree = "<group>"; };
+		B3B7E8B61AB3613500D80463 /* ConstantConversions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConstantConversions.cpp; path = gl/ConstantConversions.cpp; sourceTree = "<group>"; };
 		C70E19FE106AA38700E63577 /* Buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Buffer.h; sourceTree = "<group>"; };
 		C70E1A01106AA39D00E63577 /* Buffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Buffer.cpp; sourceTree = "<group>"; };
 		C7B92EF5121C828400093AFE /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
@@ -2130,7 +2130,7 @@
 				0003F4261992D67300647C8B /* Batch.h */,
 				0003F4271992D67300647C8B /* BufferObj.h */,
 				0003F4281992D67300647C8B /* BufferTexture.h */,
-				0003F4291992D67300647C8B /* ConstantStrings.h */,
+				B3B7E8B21AB3610F00D80463 /* ConstantConversions.h */,
 				0003F42A1992D67300647C8B /* Context.h */,
 				0003F42B1992D67300647C8B /* Environment.h */,
 				0003F42C1992D67300647C8B /* Fbo.h */,
@@ -2158,8 +2158,8 @@
 				0003F3BE1992D64100647C8B /* Batch.cpp */,
 				0003F3BF1992D64100647C8B /* BufferObj.cpp */,
 				0003F3C01992D64100647C8B /* BufferTexture.cpp */,
-				0003F3C11992D64100647C8B /* ConstantStrings.cpp */,
 				0003F3C21992D64100647C8B /* Context.cpp */,
+				B3B7E8B61AB3613500D80463 /* ConstantConversions.cpp */,
 				0003F3C31992D64100647C8B /* Environment.cpp */,
 				0003F3C41992D64100647C8B /* EnvironmentCore.cpp */,
 				00AD0D2D19F051B100022D9F /* EnvironmentEs.cpp */,
@@ -2691,7 +2691,6 @@
 				0003F4781992D6C100647C8B /* GeomIo.h in Headers */,
 				007050451114F93F003FCAE4 /* Trim.h in Headers */,
 				0005630711513B1D00ECFD91 /* AppImplCocoaTouchRendererQuartz.h in Headers */,
-				0003F4431992D67300647C8B /* ConstantStrings.h in Headers */,
 				009D6AEF1157FB340037C77C /* AppImplCocoaTouchRendererGl.h in Headers */,
 				111A5F75191F7286005C3166 /* smallft.h in Headers */,
 				009D6B021157FCA60037C77C /* CinderViewCocoaTouch.h in Headers */,
@@ -2727,6 +2726,7 @@
 				00A1141B1355369A00081873 /* mesh.h in Headers */,
 				00A1141D1355369A00081873 /* priorityq.h in Headers */,
 				00A1141F1355369A00081873 /* sweep.h in Headers */,
+				B3B7E8B41AB3610F00D80463 /* ConstantConversions.h in Headers */,
 				00A114211355369A00081873 /* tess.h in Headers */,
 				00A114221355369A00081873 /* tesselator.h in Headers */,
 				00A1153A1357F42400081873 /* Easing.h in Headers */,
@@ -2813,7 +2813,6 @@
 				00CFD9701135C3520091E310 /* Ray.h in Headers */,
 				00CFD9711135C3520091E310 /* Sphere.h in Headers */,
 				111A5F30191F7285005C3166 /* codec_internal.h in Headers */,
-				0003F4441992D67300647C8B /* ConstantStrings.h in Headers */,
 				0003F43E1992D67300647C8B /* BufferObj.h in Headers */,
 				111A5F41191F7285005C3166 /* mdct.h in Headers */,
 				0003F47D1992DA7C00647C8B /* Log.h in Headers */,
@@ -2825,6 +2824,7 @@
 				00CFD97C1135C3520091E310 /* Display.h in Headers */,
 				111A5F32191F7285005C3166 /* envelope.h in Headers */,
 				00CFD9821135C3520091E310 /* Font.h in Headers */,
+				B3B7E8B51AB3610F00D80463 /* ConstantConversions.h in Headers */,
 				00CFD9841135C3520091E310 /* Text.h in Headers */,
 				00CFD9851135C3520091E310 /* Renderer.h in Headers */,
 				00CFD9861135C3520091E310 /* Serial.h in Headers */,
@@ -3054,6 +3054,7 @@
 				0003F4831992DB0500647C8B /* RendererGl.h in Headers */,
 				00419C8711057CDB007EC9AD /* Threshold.h in Headers */,
 				111A5EB9191F703D005C3166 /* lookup.h in Headers */,
+				B3B7E8B31AB3610F00D80463 /* ConstantConversions.h in Headers */,
 				00419C8811057CDB007EC9AD /* Trim.h in Headers */,
 				0076581C11226084005547DF /* CinderResources.h in Headers */,
 				00CFE37D113B85F60091E310 /* Path2d.h in Headers */,
@@ -3099,7 +3100,6 @@
 				00A114101355369A00081873 /* sweep.h in Headers */,
 				00A114121355369A00081873 /* tess.h in Headers */,
 				0003F4771992D6C100647C8B /* GeomIo.h in Headers */,
-				0003F4421992D67300647C8B /* ConstantStrings.h in Headers */,
 				00A114131355369A00081873 /* tesselator.h in Headers */,
 				00A115391357F42400081873 /* Easing.h in Headers */,
 				006D706C19942C31008149E2 /* MovieWriter.h in Headers */,
@@ -3279,7 +3279,6 @@
 				111A600E191F72AE005C3166 /* Utilities.cpp in Sources */,
 				0070507C1114F93F003FCAE4 /* BSpline.cpp in Sources */,
 				0070507F1114F93F003FCAE4 /* Perlin.cpp in Sources */,
-				0003F3E21992D64100647C8B /* ConstantStrings.cpp in Sources */,
 				007050801114F93F003FCAE4 /* Sphere.cpp in Sources */,
 				111A5FDB191F72AE005C3166 /* GenNode.cpp in Sources */,
 				007050821114F93F003FCAE4 /* TriMesh.cpp in Sources */,
@@ -3317,6 +3316,7 @@
 				0003F3D91992D64100647C8B /* Batch.cpp in Sources */,
 				007050AB1114F93F003FCAE4 /* Resize.cpp in Sources */,
 				111A5FD5191F72AE005C3166 /* FileOggVorbis.cpp in Sources */,
+				B3B7E8B81AB3613500D80463 /* ConstantConversions.cpp in Sources */,
 				111A5F74191F7286005C3166 /* smallft.c in Sources */,
 				111A5F52191F7286005C3166 /* analysis.c in Sources */,
 				007050AC1114F93F003FCAE4 /* Threshold.cpp in Sources */,
@@ -3459,7 +3459,6 @@
 				111A600F191F72AE005C3166 /* Utilities.cpp in Sources */,
 				00CFD9BD1135C3520091E310 /* BSpline.cpp in Sources */,
 				00CFD9BE1135C3520091E310 /* Perlin.cpp in Sources */,
-				0003F3E31992D64100647C8B /* ConstantStrings.cpp in Sources */,
 				00CFD9BF1135C3520091E310 /* Sphere.cpp in Sources */,
 				111A5FDC191F72AE005C3166 /* GenNode.cpp in Sources */,
 				00CFD9C11135C3520091E310 /* TriMesh.cpp in Sources */,
@@ -3497,6 +3496,7 @@
 				0003F3DA1992D64100647C8B /* Batch.cpp in Sources */,
 				00CFD9D21135C3520091E310 /* Resize.cpp in Sources */,
 				111A5FD6191F72AE005C3166 /* FileOggVorbis.cpp in Sources */,
+				B3B7E8B91AB3613500D80463 /* ConstantConversions.cpp in Sources */,
 				111A5F4B191F7285005C3166 /* smallft.c in Sources */,
 				111A5F29191F7285005C3166 /* analysis.c in Sources */,
 				00CFD9D31135C3520091E310 /* Threshold.cpp in Sources */,
@@ -3679,7 +3679,6 @@
 				003ADB971038974A00ACF6F2 /* TwMgr.cpp in Sources */,
 				003ADB981038974A00ACF6F2 /* TwPrecomp.cpp in Sources */,
 				111A5FC2191F72AE005C3166 /* Biquad.cpp in Sources */,
-				0003F3E11992D64100647C8B /* ConstantStrings.cpp in Sources */,
 				003ADB9A1038974A00ACF6F2 /* TwFonts.cpp in Sources */,
 				003ADB9B1038974A00ACF6F2 /* TwColors.cpp in Sources */,
 				003ADB9D1038974A00ACF6F2 /* TwBar.cpp in Sources */,
@@ -3704,6 +3703,7 @@
 				00419C7011057CC6007EC9AD /* Flip.cpp in Sources */,
 				00419C7111057CC6007EC9AD /* Grayscale.cpp in Sources */,
 				00419C7211057CC6007EC9AD /* Hdr.cpp in Sources */,
+				B3B7E8B71AB3613500D80463 /* ConstantConversions.cpp in Sources */,
 				00419C7311057CC6007EC9AD /* Premultiply.cpp in Sources */,
 				00419C7411057CC6007EC9AD /* Resize.cpp in Sources */,
 				0003F3E71992D64100647C8B /* Environment.cpp in Sources */,
