@@ -1,17 +1,13 @@
-#version 150
-#extension all : warn
+#version 300 core
 
-uniform sampler2D ParticleTex;
+in mediump float Transp;
 
-in float Transp;
+out mediump vec4 FragColor;
 
-out vec4 FragColor;
-
-const vec3 pink = vec3(1.0, 0.07, 0.57);
+const mediump vec3 orange = vec3( 1.0, .5, .25 );
 
 void main() {
-	FragColor = texture( ParticleTex, gl_PointCoord );
-	FragColor = vec4((vec3(1 - FragColor.r, 1 - FragColor.g, 1 - FragColor.b) * pink), FragColor.a);
-	FragColor.a *= (Transp);
-	FragColor.a -= .1;
+	highp float L = length( gl_PointCoord.xy - vec2( .5 ) );
+	highp float alpha = pow( exp( - pow( L, 2.0 ) ), 16.0 );
+	FragColor = vec4( orange, alpha );
 }

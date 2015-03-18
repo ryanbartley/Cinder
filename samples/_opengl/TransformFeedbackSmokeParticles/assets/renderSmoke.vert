@@ -1,4 +1,4 @@
-#version 150 core
+#version 300 core
 
 in vec3 VertexPosition;
 in vec3 VertexVelocity;
@@ -20,6 +20,7 @@ void main() {
 	float age = Time - VertexStartTime;
 	Transp = 0.0;
 	gl_Position = ciModelViewProjection * vec4(VertexPosition, 1.0);
+	gl_PointSize = 0.0;
 	if( Time >= VertexStartTime ) {
 		float agePct = age / ParticleLifetime;
 		Transp = 1.0 - agePct;

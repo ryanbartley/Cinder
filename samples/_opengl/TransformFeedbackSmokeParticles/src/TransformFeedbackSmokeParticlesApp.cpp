@@ -29,10 +29,10 @@ const int VelocityIndex			= 1;
 const int StartTimeIndex		= 2;
 const int InitialVelocityIndex	= 3;
 
-float mix( float x, float y, float a )
-{
-	return x * ( 1 - a ) + y * a;
-}
+//float mix( float x, float y, float a )
+//{
+//	return x * ( 1 - a ) + y * a;
+//}
 
 class TransformFeedbackSmokeParticlesApp : public App {
   public:
@@ -95,7 +95,7 @@ void TransformFeedbackSmokeParticlesApp::loadShaders()
 		// Notice that we don't offer a fragment shader. We don't need
 		// one because we're not trying to write pixels while updating
 		// the position, velocity, etc. data to the screen.
-		mUpdateParticleGlslFormat.vertex( loadAsset( "updateSmoke.vert" ) )
+		mUpdateParticleGlslFormat.vertex( loadAsset( "updateSmoke.vert" ) ).fragment( "#version 300 es void main(){}" )
 		// This option will be either GL_SEPARATE_ATTRIBS or GL_INTERLEAVED_ATTRIBS,
 		// depending on the structure of our data, below. We're using multiple
 		// buffers. Therefore, we're using GL_SEPERATE_ATTRIBS
@@ -174,9 +174,9 @@ void TransformFeedbackSmokeParticlesApp::loadBuffers()
 	}
 
 	// Create the StartTime Buffer, so that we can reset the particle after it's dead
-	mPStartTimes[0] = ci::gl::Vbo::create( GL_ARRAY_BUFFER, timeData.size() * sizeof( float ), timeData.data(), GL_DYNAMIC_COPY );
+	mPStartTimes[0] = ci::gl::Vbo::create( GL_ARRAY_BUFFER, timeData.size() * sizeof( float ), timeData.data(), GL_STATIC_DRAW );
 	// Create the StartTime ping-pong buffer
-	mPStartTimes[1] = ci::gl::Vbo::create( GL_ARRAY_BUFFER, nParticles * sizeof( float ), nullptr, GL_DYNAMIC_COPY );
+	mPStartTimes[1] = ci::gl::Vbo::create( GL_ARRAY_BUFFER, nParticles * sizeof( float ), nullptr, GL_STATIC_DRAW );
 	
 	for( int i = 0; i < 2; i++ ) {
 		// Initialize the Vao's holding the info for each buffer
@@ -256,9 +256,8 @@ void TransformFeedbackSmokeParticlesApp::draw()
 	gl::ScopedVao			vaoScope( mPVao[1-mDrawBuff] );
 	gl::ScopedGlslProg		glslScope( mPRenderGlsl );
 	gl::ScopedTextureBind	texScope( mSmokeTexture );
-	gl::ScopedState			stateScope( GL_PROGRAM_POINT_SIZE, true );
 	gl::ScopedBlend			blendScope( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-	
+
 	gl::pushMatrices();
 	gl::setMatrices( mCam );
 	gl::multModelMatrix( rotate( rotateRadians, vec3( 0, 1, 0 ) ) );
