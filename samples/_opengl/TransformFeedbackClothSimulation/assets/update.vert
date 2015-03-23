@@ -11,7 +11,7 @@ in ivec4 connection;
 
 // This is a TBO that will be bound to the same buffer as the
 // position_mass input attribute
-uniform samplerBuffer tex_position;
+uniform sampler2D tex_position;
 
 uniform vec2 mouse_pos;
 
@@ -45,10 +45,12 @@ void main(void)
 	vec3 F = gravity * m - c * u;	// F is the force on the mass
 	bool fixed_node = true;			// Becomes false when force is applied
 	
+	ivec2 texSize = textureSize( tex_position, 0 );
+	
 	for ( int i = 0; i < 4; ++i ) {
 		if(connection[i] != -1) {
 			// q is the position of the other vertex
-			vec3 q = texelFetch(tex_position, connection[i]).xyz;
+			vec3 q = texture(tex_position, vec2(connection[i] % texSize.x, connection[i] / texSize.y )).xyz;
 			vec3 d = q - p;
 			float x = length(d);
 			F += -k * (rest_length - x) * normalize(d);

@@ -4,18 +4,18 @@ in vec3 VertexPosition;
 in vec3 VertexVelocity;
 in float VertexStartTime;
 in vec3 VertexInitialVelocity;
-in vec4 VertexColor;
 
 out vec3 Position; // To Transform Feedback
 out vec3 Velocity; // To Transform Feedback
-out vec4 Color; // To Transform Feedback
 out float StartTime; // To Transform Feedback
-
+out vec3 InitVelocity; // To Transform Feedback
 
 uniform float Time; // Time
 uniform float H;	// Elapsed time between frames
 uniform vec3 Accel; // Particle Acceleration
 uniform float ParticleLifetime; // Particle lifespan
+
+uniform vec3 Origin;
 
 void main() {
 	
@@ -23,6 +23,7 @@ void main() {
 	Position = VertexPosition;
 	Velocity = VertexVelocity;
 	StartTime = VertexStartTime;
+	InitVelocity = VertexInitialVelocity;
 	
 	if( Time >= StartTime ) {
 		
@@ -30,7 +31,7 @@ void main() {
 		
 		if( age > ParticleLifetime ) {
 			// The particle is past it's lifetime, recycle.
-			Position = vec3(0.0);
+			Position = Origin;
 			Velocity = VertexInitialVelocity;
 			StartTime = Time;
 		}

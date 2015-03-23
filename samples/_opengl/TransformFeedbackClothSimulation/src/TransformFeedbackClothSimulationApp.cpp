@@ -42,7 +42,8 @@ class TransformFeedbackClothSimulationApp : public App {
 	gl::VaoRef					mVaos[2];
 	gl::VboRef					mPositions[2], mVelocities[2], mConnections, mLineElementBuffer;
 	gl::TransformFeedbackObjRef mFeedbackObjs[2];
-	gl::BufferTextureRef		mPosBufferTextures[2];
+	gl::Texture2dRef			mPositionTexs[2];
+//	gl::BufferTextureRef		mPosBufferTextures[2];
 	int							mIterationsPerFrame, mIterationIndex, mTriangleIndices, mLineIndices;
 	bool						drawLines, drawPoints, mouseMoving, drawTexture;
 	vec2						currentMousePosition;
@@ -101,8 +102,8 @@ void TransformFeedbackClothSimulationApp::update()
 		}
 		
 		gl::ScopedVao			vaoScope( mVaos[mIterationIndex & 1] );
-		gl::ScopedTextureBind	textureBind( mPosBufferTextures[mIterationIndex & 1]->getTarget(),
-											mPosBufferTextures[mIterationIndex & 1]->getId() );
+		gl::ScopedTextureBind	textureBind( mPositionTexs[mIterationIndex & 1], 0 );
+		mUpdateGlsl->uniform( "tex_position", 0 );
 		
 		mIterationIndex++;
 		
@@ -111,6 +112,10 @@ void TransformFeedbackClothSimulationApp::update()
 		gl::beginTransformFeedback( GL_POINTS );
 		gl::drawArrays( GL_POINTS, 0, POINTS_TOTAL );
 		gl::endTransformFeedback();
+	
+		gl::ScopedBuffer		bufferScope( GL_PIXEL_UNPACK_BUFFER, mPositions[mIterationIndex & 1]->getId() );
+		gl::ScopedTextureBind	textureScope( mPositionTexs[mIterationIndex+1 & 1] );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, POINTS_X, POINTS_Y, 0, GL_RGBA, GL_FLOAT, nullptr );
 	}
 }
 
@@ -226,6 +231,11 @@ void TransformFeedbackClothSimulationApp::loadBuffers()
 	// Create another Position Buffer that is null, for ping-ponging
 	mPositions[1] = gl::Vbo::create( GL_ARRAY_BUFFER, positions.size() * sizeof(vec4), nullptr, GL_STATIC_DRAW );
 	
+	gl::Texture2d::Format format;
+	format.mipmap( false ).minFilter( GL_NEAREST ).magFilter( GL_NEAREST ).internalFormat( GL_RGBA32F ).dataType( GL_FLOAT );
+	mPositionTexs[0] = gl::Texture2d::create( (uint8_t*)positions.data(), GL_RGBA, POINTS_X, POINTS_Y, format );
+	mPositionTexs[1] = gl::Texture2d::create( (uint8_t*)positions.data(), GL_RGBA, POINTS_X, POINTS_Y, format );
+	
 	// Create the Velocity Buffer with the intial velocity data
 	mVelocities[0] = gl::Vbo::create( GL_ARRAY_BUFFER, velocities.size() * sizeof(vec3), velocities.data(), GL_STATIC_DRAW );
 	// Create another Velocity Buffer that is null, for ping-ponging
@@ -266,7 +276,7 @@ void TransformFeedbackClothSimulationApp::loadBuffers()
 		
 		// Create Texture buffers to gain access to the lookup tables for
 		// calculations in the update shader
-		mPosBufferTextures[i] = gl::BufferTexture::create( mPositions[i], GL_RGBA32F );
+//		mPosBufferTextures[i] = gl::BufferTexture::create( mPositions[i], GL_RGBA32F );
 	}
 	
 	// Create an element buffer to draw the lines (connections) between the points

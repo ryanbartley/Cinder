@@ -1,10 +1,9 @@
-#version 300 core
+#version 330 core
 
 in vec3 VertexPosition;
 in vec3 VertexVelocity;
 in float VertexStartTime;
 in vec3 VertexInitialVelocity;
-in vec4 VertexColor;
 
 out float Transp; // To Fragment Shader
 
