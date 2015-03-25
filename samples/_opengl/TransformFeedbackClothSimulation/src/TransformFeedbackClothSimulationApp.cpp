@@ -55,6 +55,7 @@ void TransformFeedbackClothSimulationApp::setup()
 	drawLines = drawPoints = drawTexture = 1;
 	mouseMoving = mIterationIndex = 0;
 	gl::viewport(0, 0, getWindowWidth()*2, getWindowHeight()*2);
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1);
 	
 	loadShaders();
 	loadBuffers();
@@ -116,6 +117,7 @@ void TransformFeedbackClothSimulationApp::update()
 		gl::ScopedBuffer		bufferScope( GL_PIXEL_UNPACK_BUFFER, mPositions[mIterationIndex & 1]->getId() );
 		gl::ScopedTextureBind	textureScope( mPositionTexs[mIterationIndex+1 & 1] );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, POINTS_X, POINTS_Y, 0, GL_RGBA, GL_FLOAT, nullptr );
+		
 	}
 }
 
@@ -231,10 +233,14 @@ void TransformFeedbackClothSimulationApp::loadBuffers()
 	// Create another Position Buffer that is null, for ping-ponging
 	mPositions[1] = gl::Vbo::create( GL_ARRAY_BUFFER, positions.size() * sizeof(vec4), nullptr, GL_STATIC_DRAW );
 	
+	Surface32fRef surfaceData = Surface32f::create( &positions[0][0], POINTS_X, POINTS_Y, POINTS_X * 4 * 4, SurfaceChannelOrder::RGBA );
+	
 	gl::Texture2d::Format format;
 	format.mipmap( false ).minFilter( GL_NEAREST ).magFilter( GL_NEAREST ).internalFormat( GL_RGBA32F ).dataType( GL_FLOAT );
-	mPositionTexs[0] = gl::Texture2d::create( (uint8_t*)positions.data(), GL_RGBA, POINTS_X, POINTS_Y, format );
-	mPositionTexs[1] = gl::Texture2d::create( (uint8_t*)positions.data(), GL_RGBA, POINTS_X, POINTS_Y, format );
+	mPositionTexs[0] = gl::Texture2d::create( *surfaceData, format );
+	mPositionTexs[1] = gl::Texture2d::create( *surfaceData, format );
+
+	
 	
 	// Create the Velocity Buffer with the intial velocity data
 	mVelocities[0] = gl::Vbo::create( GL_ARRAY_BUFFER, velocities.size() * sizeof(vec3), velocities.data(), GL_STATIC_DRAW );

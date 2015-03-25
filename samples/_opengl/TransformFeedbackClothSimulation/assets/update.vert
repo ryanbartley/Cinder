@@ -47,10 +47,11 @@ void main(void)
 	
 	ivec2 texSize = textureSize( tex_position, 0 );
 	
+	
 	for ( int i = 0; i < 4; ++i ) {
 		if(connection[i] != -1) {
 			// q is the position of the other vertex
-			vec3 q = texture(tex_position, vec2(connection[i] % texSize.x, connection[i] / texSize.y )).xyz;
+			vec3 q = texture(tex_position, vec2( float(connection[i] % (texSize.x-1)) / float(texSize.x-1), float(connection[i] / (texSize.y-1)) / float(texSize.y-1) ) ).xyz;
 			vec3 d = q - p;
 			float x = length(d);
 			F += -k * (rest_length - x) * normalize(d);
