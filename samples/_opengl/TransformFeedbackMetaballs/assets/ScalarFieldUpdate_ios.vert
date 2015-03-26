@@ -1,4 +1,4 @@
-#version 330 core
+#version 300 es
 
 /** Precision to avoid division-by-zero errors. */
 #define EPSILON 0.000001f
@@ -45,7 +45,7 @@ ivec3 decode_space_position(in int vertex_index)
     encoded_position = encoded_position / samples_per_axis;
 
     space_position.z = encoded_position;
-
+	
     return space_position;
 }
 /* [Stage 2 decode_space_position] */

@@ -20,7 +20,7 @@ const int n_sphere_position_components = 4;
 // from th range [8..256].
 const GLuint tesselation_level = 32;
 /**< Scalar field's isosurface level.*/
-GLfloat      isosurface_level  = 12.0f;
+GLfloat      isosurface_level  = 24.0f;
 
 /* Marching Cubes algorithm-specific constants. */
 /**< Amount of samples we break scalar space into (per each axis). */

@@ -9,17 +9,17 @@
 #include "cinder/gl/Texture.h"
 
 #include "CellTriangulationTable.h"
+#include "cinder/MayaCamUI.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-
-
 class TransformFeedbackMetaballsApp : public App {
   public:
 	void setup() override;
 	void mouseDown( MouseEvent event ) override;
+	void mouseDrag( MouseEvent event ) override;
 	void update() override;
 	void draw() override;
 	
@@ -27,23 +27,29 @@ class TransformFeedbackMetaballsApp : public App {
 	void setupTextures();
 	void setupGlsl();
 	
-	gl::GlslProgRef mSphereUpdate, mScalarFieldUpdate, mMarchingCubeCells, mMarchingCubesRender;
-	gl::VboRef		mSphereVbo, mScalarFieldVbo, mMarchingCubesCellsVbo;
+	gl::GlslProgRef		mSphereUpdate, mScalarFieldUpdate, mMarchingCubeCells, mMarchingCubesRender;
+	gl::VboRef			mSphereVbo, mScalarFieldVbo, mMarchingCubesCellsVbo;
 	gl::TransformFeedbackObjRef mSphereTfo, mScalarFieldTfo, mMarchingCubesCellsTfo;
-	gl::VaoRef		mDummyVao;
-	gl::Texture3dRef mScalarFieldTex, mMarchingCubesCellsTex;
-	gl::Texture2dRef mMarchingCubesLookupTex;
+	gl::VaoRef			mDummyVao;
+	gl::Texture3dRef	mScalarFieldTex, mMarchingCubesCellsTex;
+	gl::Texture2dRef	mMarchingCubesLookupTex;
+	CameraPersp			mCamera;
+	MayaCamUI			mMayaCam;
 };
 
 void TransformFeedbackMetaballsApp::setup()
 {
+	setupTextures();
 	setupBuffers();
 	setupGlsl();
-	setupTextures();
 	
 	/* Specify one byte alignment for pixels rows in memory for pack and unpack buffers. */
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT,   1);
+	
+	mCamera.setPerspective( 45.0f, getWindowAspectRatio(), 0.01f, 100.0f );
+	mCamera.lookAt( vec3( 0, 0, 5 ), vec3( 0 ) );
+	mMayaCam.setCurrentCam( mCamera );
 	
 	/* Enable facet culling, depth testing and specify front face for polygons. */
 	gl::enable   (GL_DEPTH_TEST);
@@ -56,16 +62,26 @@ void TransformFeedbackMetaballsApp::setupGlsl()
 	/* 1. Calculate sphere positions stage. */
 	/* Create sphere updater program object. */
 	mSphereUpdate = gl::GlslProg::create( gl::GlslProg::Format()
-										 .vertex( loadAsset( "SphereUpdate.vert" ) )
+#if ! defined( CINDER_GL_ES )
+										 .vertex( loadAsset( "SphereUpdate_osx.vert" ) )
 										 .fragment( "#version 330 core void main(){}" )
+#else
+										 .vertex( loadAsset( "SphereUpdate_ios.vert" ) )
+										 .fragment( "#version 300 es void main(){}" )
+#endif
 										 .feedbackFormat( GL_SEPARATE_ATTRIBS )
 										 .feedbackVaryings( { "sphere_position" } ) );
 	
 	/* 2. Scalar field generation stage. */
 	/* Create scalar field generator program object. */
 	mScalarFieldUpdate = gl::GlslProg::create( gl::GlslProg::Format()
-											  .vertex( loadAsset( "ScalarFieldUpdate.vert" ) )
+#if ! defined( CINDER_GL_ES )
+											  .vertex( loadAsset( "ScalarFieldUpdate_osx.vert" ) )
 											  .fragment( "#version 330 core void main(){}" )
+#else
+											  .vertex( loadAsset( "ScalarFieldUpdate_ios.vert" ) )
+											  .fragment( "#version 300 es void main(){}" )
+#endif
 											  .feedbackFormat( GL_SEPARATE_ATTRIBS )
 											  .feedbackVaryings( { "scalar_field_value" } ) );
 	
@@ -75,8 +91,13 @@ void TransformFeedbackMetaballsApp::setupGlsl()
 	/* 3. Marching Cubes cell-splitting stage. */
 	/* Create a program object to execute Marching Cubes algorithm cell splitting stage. */
 	mMarchingCubeCells = gl::GlslProg::create( gl::GlslProg::Format()
-											  .vertex( loadAsset( "MarchingCubesCells.vert" ) )
+#if ! defined( CINDER_GL_ES )
+											  .vertex( loadAsset( "MarchingCubesCells_osx.vert" ) )
 											  .fragment( "#version 330 core void main(){}" )
+#else
+											  .vertex( loadAsset( "MarchingCubesCells_ios.vert" ) )
+											  .fragment( "#version 300 es void main(){}" )
+#endif
 											  .feedbackFormat( GL_SEPARATE_ATTRIBS )
 											  .feedbackVaryings( { "cell_type_index" } ) );
 	
@@ -87,8 +108,13 @@ void TransformFeedbackMetaballsApp::setupGlsl()
 	/* 4. Marching Cubes algorithm triangle generation and rendering stage. */
 	/* Create a program object that we will use for triangle generation and rendering stage. */
 	mMarchingCubesRender = gl::GlslProg::create( gl::GlslProg::Format()
-												.vertex( loadAsset( "MarchingCubesRender.vert" ) )
-												.fragment( loadAsset( "MarchingCubesRender.frag" ) )
+#if ! defined( CINDER_GL_ES )
+												.vertex( loadAsset( "MarchingCubesRender_osx.vert" ) )
+												.fragment( loadAsset( "MarchingCubesRender_osx.frag" ) )
+#else
+												.vertex( loadAsset( "MarchingCubesRender_ios.vert" ) )
+												.fragment( loadAsset( "MarchingCubesRender_ios.frag" ) )
+#endif
 												.uniform( gl::UNIFORM_MODEL_VIEW_PROJECTION, "mvp" ) );
 	
 	
@@ -112,10 +138,10 @@ void TransformFeedbackMetaballsApp::setupBuffers()
 	gl::bindBufferBase( GL_TRANSFORM_FEEDBACK_BUFFER, 0, mSphereVbo );
 	mSphereTfo->unbind();
 	
-	/* Allocate memory for buffer */
-	glBindBuffer( GL_UNIFORM_BUFFER, mSphereVbo->getId() );
+//	/* Allocate memory for buffer */
+//	glBindBuffer( GL_UNIFORM_BUFFER, mSphereVbo->getId() );
 	
-	gl::bindBufferBase(GL_UNIFORM_BUFFER, 0, mSphereVbo );
+	gl::bindBufferBase( GL_UNIFORM_BUFFER, 0, mSphereVbo );
 	
 	/* Generate buffer object id. Define required storage space sufficient to hold scalar field data. */
 	mScalarFieldVbo = gl::Vbo::create( GL_TRANSFORM_FEEDBACK_BUFFER, samples_in_3d_space * sizeof(GLfloat), NULL, GL_STATIC_DRAW );
@@ -150,30 +176,38 @@ void TransformFeedbackMetaballsApp::setupTextures()
 	gl::Texture3d::Format format3d;
 	format3d.minFilter( GL_NEAREST )
 		.magFilter( GL_NEAREST )
-		.wrap( GL_CLAMP_TO_EDGE )
+		.wrapS( GL_CLAMP_TO_EDGE )
+		.wrapT( GL_CLAMP_TO_EDGE )
 		.internalFormat( GL_R32F )
 		.immutableStorage()
-		.mipmap( false );
+		.mipmap( false )
+		.setBaseMipmapLevel( 0 );
+	format3d.setMaxMipmapLevel( 0 );
+	
 	mScalarFieldTex = gl::Texture3d::create( samples_per_axis, samples_per_axis, samples_per_axis, format3d );
 	/* Scalar field uses GL_TEXTURE_3D target of texture unit 1. */
 	mScalarFieldTex->bind( 1 );
-	
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R,     GL_CLAMP_TO_EDGE);
 	/* Generate a texture object to hold cell type data. (We will explain why the texture later). */
 	/* Prepare texture storage for marching cube cell type data. */
 	format3d.internalFormat( GL_R32I );
 	mMarchingCubesCellsTex = gl::Texture3d::create( cells_per_axis, cells_per_axis, cells_per_axis, format3d );
 	/* Marching cubes cell type data uses GL_TEXTURE_3D target of texture unit 2. */
 	mMarchingCubesCellsTex->bind( 2 );
-	
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R,     GL_CLAMP_TO_EDGE);
 	gl::Texture2d::Format format2d;
 	format2d.minFilter( GL_NEAREST )
 		.magFilter( GL_NEAREST )
 		.wrap( GL_CLAMP_TO_EDGE )
 		.internalFormat( GL_R32I )
+		.dataType( GL_INT )
 		.immutableStorage()
-		.mipmap( false );
-	mMarchingCubesLookupTex = gl::Texture2d::create( mc_vertices_per_cell, mc_cells_types_count );
-	
+		.mipmap( false )
+		.setBaseMipmapLevel( 0 );
+	format2d.setMaxMipmapLevel( 0 );
+	mMarchingCubesLookupTex = gl::Texture2d::create( mc_vertices_per_cell, mc_cells_types_count, format2d );
+	{
+	gl::ScopedActiveTexture scopeActive( 4 );
 	/* Lookup array (tri_table) uses GL_TEXTURE_2D target of texture unit 4. */
 	mMarchingCubesLookupTex->bind( 4 );
 	
@@ -188,11 +222,18 @@ void TransformFeedbackMetaballsApp::setupTextures()
 					GL_INT,               /* ... of type int                                  */
 					tri_table             /* Data will be copied directly from tri_table      */
 					);
+	}
 
 }
 
 void TransformFeedbackMetaballsApp::mouseDown( MouseEvent event )
 {
+	mMayaCam.mouseDown( event.getPos() );
+}
+
+void TransformFeedbackMetaballsApp::mouseDrag( MouseEvent event )
+{
+	mMayaCam.mouseDrag( event.getPos(), event.isLeftDown(), event.isMiddleDown(), event.isRightDown() );
 }
 
 void TransformFeedbackMetaballsApp::update()
@@ -203,6 +244,8 @@ void TransformFeedbackMetaballsApp::draw()
 {
 	float modalTime = getElapsedSeconds();
 	gl::clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	
+	gl::setMatrices( mMayaCam.getCamera() );
 	
 	/* [Stage 1 Calculate sphere positions stage] */
 	/* 1. Calculate sphere positions stage.
@@ -274,9 +317,10 @@ void TransformFeedbackMetaballsApp::draw()
 	 * stored within a buffer object in an OpenGL ES 3.0 shader.
 	 */
 	/* [Stage 2 Scalar field generation stage move data to texture] */
-	GL_CHECK(glActiveTexture(GL_TEXTURE1));
-	GL_CHECK(glBindBuffer   (GL_PIXEL_UNPACK_BUFFER, scalar_field_buffer_object_id));
-	GL_CHECK(glTexSubImage3D(GL_TEXTURE_3D,    /* Use texture bound to GL_TEXTURE_3D                                     */
+	{
+		gl::ScopedActiveTexture scopeActiveTexture( 1 );
+		gl::ScopedBuffer		scopeBuffer( GL_PIXEL_UNPACK_BUFFER, mScalarFieldVbo->getId() );
+		glTexSubImage3D(GL_TEXTURE_3D,    /* Use texture bound to GL_TEXTURE_3D                                     */
 							 0,                /* Base image level                                                       */
 							 0,                /* From the texture origin                                                */
 							 0,                /* From the texture origin                                                */
@@ -287,7 +331,8 @@ void TransformFeedbackMetaballsApp::draw()
 							 GL_RED,           /* Scalar field gathered in buffer has only one component                 */
 							 GL_FLOAT,         /* Scalar field gathered in buffer is of float type                       */
 							 NULL              /* Scalar field gathered in buffer bound to GL_PIXEL_UNPACK_BUFFER target */
-							 ));
+							 );
+	}
 	/* [Stage 2 Scalar field generation stage move data to texture] */
 	
 	
@@ -326,9 +371,10 @@ void TransformFeedbackMetaballsApp::draw()
 	 * We need to move this data to a texture object, as there is no way we could access data
 	 * stored within a buffer object in a OpenGL ES 3.0 shader.
 	 */
-	GL_CHECK(glActiveTexture(GL_TEXTURE2));
-	GL_CHECK(glBindBuffer   (GL_PIXEL_UNPACK_BUFFER, marching_cubes_cells_types_buffer_id));
-	GL_CHECK(glTexSubImage3D(GL_TEXTURE_3D,  /* Use texture bound to GL_TEXTURE_3D                                   */
+	{
+		gl::ScopedActiveTexture scopeActiveTexture( 2 );
+		gl::ScopedBuffer		scopeBuffer( GL_PIXEL_UNPACK_BUFFER, mMarchingCubesCellsVbo->getId() );
+		glTexSubImage3D(GL_TEXTURE_3D,  /* Use texture bound to GL_TEXTURE_3D                                   */
 							 0,              /* Base image level                                                     */
 							 0,              /* From the texture origin                                              */
 							 0,              /* From the texture origin                                              */
@@ -339,25 +385,28 @@ void TransformFeedbackMetaballsApp::draw()
 							 GL_RED_INTEGER, /* Cell types gathered in buffer have only one component                */
 							 GL_INT,         /* Cell types gathered in buffer are of int type                        */
 							 NULL            /* Cell types gathered in buffer bound to GL_PIXEL_UNPACK_BUFFER target */
-							 ));
+							 );
 	
-	
+	}
 	/* 4. Marching Cubes algorithm triangle generation stage.
 	 *
 	 * At this stage, we render exactly (3 vertices * 5 triangles per cell *
 	 * amount of cells the scalar field is split to) triangle vertices.
 	 * Then render triangularized geometry.
 	 */
-	GL_CHECK(glActiveTexture(GL_TEXTURE0));
-	
-	/* Activate triangle generating and rendering program. */
-	gl::ScopedGlslProg scopeGlslProg( mMarchingCubesRender );
-	mMarchingCubesRender->uniform( "time", modalTime );
-	
-	/* [Stage 4 Run triangle generating and rendering program] */
-	/* Run triangle generating and rendering program. */
-	gl::drawArrays( GL_TRIANGLES, 0, cells_in_3d_space * triangles_per_cell * vertices_per_triangle );
-	/* [Stage 4 Run triangle generating and rendering program] */
+	{
+		gl::ScopedActiveTexture scopeActiveTexture( 0 );
+		
+		/* Activate triangle generating and rendering program. */
+		gl::ScopedGlslProg scopeGlslProg( mMarchingCubesRender );
+		mMarchingCubesRender->uniform( "time", modalTime );
+		gl::setDefaultShaderVars();
+		
+		/* [Stage 4 Run triangle generating and rendering program] */
+		/* Run triangle generating and rendering program. */
+		gl::drawArrays( GL_TRIANGLES, 0, cells_in_3d_space * triangles_per_cell * vertices_per_triangle );
+		/* [Stage 4 Run triangle generating and rendering program] */
+	}
 }
 
 CINDER_APP( TransformFeedbackMetaballsApp, RendererGl )

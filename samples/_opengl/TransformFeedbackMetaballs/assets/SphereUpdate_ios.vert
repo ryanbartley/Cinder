@@ -1,4 +1,4 @@
-#version 330 core
+#version 300 es
 
 /** Structure that describes parameters of a single sphere moving across the scalar field. */
 struct sphere_descriptor
@@ -13,10 +13,8 @@ struct sphere_descriptor
     float size;                /* Size of a sphere (weight or charge).        */
 };
 
-/* [Stage 1 Uniforms] */
 /** Current time moment. */
 uniform float time;
-/* [Stage 1 Uniforms] */
 
 /* [Stage 1 Output data] */
 /** Calculated sphere positions. */
