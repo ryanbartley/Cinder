@@ -1,7 +1,6 @@
-#version 110
+#version 330
 
 uniform float counter;
-uniform int isPressed;
 uniform sampler2D texDiffuse;
 uniform sampler2D texNormal;
 uniform sampler2D texHeight;
@@ -13,8 +12,11 @@ uniform float spinSpeed;
 uniform vec3 mouseVel;
 uniform float minHeight;
 
-varying vec3 normal;
-varying vec3 position;
+in vec3 normal;
+in vec3 position;
+in vec2 texcoord;
+
+out vec4 oColor;
 
 void main()
 {
@@ -22,12 +24,12 @@ void main()
 
 	float tOffset			= sin( counter*rotSpeed ) * spinSpeed;
 	
-	vec2 texCoord			= vec2( ( gl_TexCoord[0].s * ( 1.0 - spinSpeed ) ) + counter*rotSpeed * spinSpeed + mouseVel.x, 1.0 - gl_TexCoord[0].t + tOffset + mouseVel.y );
+	vec2 texCoord			= vec2( ( texcoord.s * ( 1.0 - spinSpeed ) ) + counter*rotSpeed * spinSpeed + mouseVel.x, 1.0 - texcoord.t + tOffset + mouseVel.y );
 	
-	vec3 diffuseSample		= texture2D( texDiffuse, texCoord ).rgb;
-	vec3 normalSample		= ( texture2D( texNormal, texCoord ).rgb - vec3( 0.5, 0.5, 0.5 ) ) * 2.0;
-	float heightValue		= pow( 1.0 - texture2D( texHeight, texCoord ).r, 5.0 );
-	float specValue			= texture2D( texSpec, texCoord ).r;
+	vec3 diffuseSample		= texture( texDiffuse, texCoord ).rgb;
+	vec3 normalSample		= ( texture( texNormal, texCoord ).rgb - vec3( 0.5, 0.5, 0.5 ) ) * 2.0;
+	float heightValue		= pow( 1.0 - texture( texHeight, texCoord ).r, 5.0 );
+	float specValue			= texture( texSpec, texCoord ).r;
 	
 	vec3 ppNormal			= normalize( normal + normalSample );
 	float ppDiffuse			= abs( dot( ppNormal, lightDir ) );
@@ -43,14 +45,14 @@ void main()
 	vec3 oceanFinal			= diffuseSample + ppSpecularBright + heatCoreColor;
 	
 	if( minHeight < 0.01 ){
-		gl_FragColor.rgb	= landFinal + oceanFinal;
-		gl_FragColor.a		= 1.0;
+		oColor.rgb	= landFinal + oceanFinal;
+		oColor.a		= 1.0;
 	} else {
-		gl_FragColor.rgb	= ( landFinal + oceanFinal ) * heatColor * ppSpecular * ( 1.0 - heightValue );
+		oColor.rgb	= ( landFinal + oceanFinal ) * heatColor * ppSpecular * ( 1.0 - heightValue );
 		if( ( 1.0 - heightValue ) <= minHeight ){
-			gl_FragColor.a	= 0.0;
+			oColor.a	= 0.0;
 		} else {
-			gl_FragColor.a	= minHeight * 0.0001;
+			oColor.a	= minHeight * 0.0001;
 		}
 	}
 }
