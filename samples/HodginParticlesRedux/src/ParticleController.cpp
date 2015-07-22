@@ -9,16 +9,25 @@
 
 using namespace ci;
 using namespace ci::app;
-using std::list;
-using std::vector;
-using std::cout;
+using namespace std;
 
+const static float RADIUS_MIN = 10.0f;
+const static float RADIUS_MAX = 30.0f;
 
 ParticleController::ParticleController()
 : mEnablePerlin( true ), mEnableGravity( false ), mEnableConstraints( true ),
 	mEnableRepulsion( false ), mIsTouchingConstraint( false ), mParticleRender( new ParticleRender ),
-	mEmitterRender( new EmitterRender ), mRoomRender( new RoomRender ), mRenderParticles( true ), mRenderTrails( true )
+	mEmitterRender( new EmitterRender ), mRoomRender( new RoomRender ),
+	mRenderParticles( true ), mRenderTrails( true )
 {
+	mEmitterPos		= vec3( 0.0f );
+	mEmitterVel		= vec3( 0.0f );
+	mEmitterAcc		= vec3( 0.0f );
+	mEmitterAxis	= vec3( 0.0f, 1.0f, 0.0f );
+	
+	mEmitterRadius		= RADIUS_MAX;
+	mEmitterRotSpeed	= 0.0f;
+	mEmitterRotAngle	= 0.0f;
 }
 
 void ParticleController::setup()
@@ -34,55 +43,60 @@ void ParticleController::createConstraints( vec2 windowDim )
 	mConstraints.push_back( new Constraint{ vec3( 0, 1, 0 ), -1000.0f, windowDim.y * 0.625f } );
 }
 
-void ParticleController::update( const vec3 &mouseLoc, bool mouseIsDown )
+void ParticleController::update( const Ray &ray, bool mouseDown )
 {
-	updateEmitter( mouseLoc, mouseIsDown );
+	updateEmitter( ray, mouseDown );
 	updateParticles();
 }
 
-void ParticleController::updateEmitter( const vec3 &mouseLoc, bool mouseIsDown )
+void ParticleController::updateEmitter( const Ray &ray, bool mouseDown )
 {
-	vec3 mouseVel( mouseLoc.x - mEmitterLoc.x, mouseLoc.y - mEmitterLoc.y, 0 );
-	mEmitterVel -= ( mEmitterVel - mouseVel ) * 0.1f;
-	
-	mEmitterLoc += mEmitterVel;
-	mEmitterVel *= 0.9f;
-	
-	if( mIsTouchingConstraint && mouseIsDown )
-		mEmitterVel += Rand::randVec3() * 3.0f * mEmitterHeat;
-	
-	if( mouseIsDown  ) {
-		mEmitterSpinSpeed -= ( mEmitterSpinSpeed - 1.0f ) * 0.04f;
-		mEmitterHeat -= ( mEmitterHeat - mEmitterSpinSpeed ) * 0.1f;
-		mIsTouchingConstraint = false;
+	if( mouseDown ){
+		mEmitterRotSpeed	-= ( mEmitterRotSpeed - 1.0f ) * 0.05f;
+		mEmitterRadius		-= ( mEmitterRadius - RADIUS_MIN ) * 0.05f;
 	} else {
-		mEmitterSpinSpeed -= ( mEmitterSpinSpeed - 0.0f ) * 0.05f;
-		mEmitterHeat -= ( mEmitterHeat - mEmitterSpinSpeed ) * 0.01f;
+		mEmitterRotSpeed	-= ( mEmitterRotSpeed - 0.01f ) * 0.05f;
+		mEmitterRadius		-= ( mEmitterRadius - RADIUS_MAX ) * 0.05f;
 	}
+	
+	mEmitterHeat -= ( mEmitterHeat - mEmitterRotSpeed ) * 0.1f;
+	
+	float rayPlaneDist;
+	ray.calcPlaneIntersection( vec3( 0.0f ), vec3( 0.0f, 0.0f, -1.0f ), &rayPlaneDist );
+	vec3 newPos	= ray.getOrigin() + ray.getDirection() * rayPlaneDist;
+	
+	mEmitterPos -= ( mEmitterPos - newPos ) * 0.2f;
+	
+	mEmitterRotAngle += mEmitterRotSpeed;
+	
+	mEmitterMatrix = mat4();
+	mEmitterMatrix = translate( mEmitterMatrix, mEmitterPos );
+	mEmitterMatrix = scale( mEmitterMatrix, vec3( mEmitterRadius ) );
+	mEmitterMatrix = rotate( mEmitterMatrix, mEmitterRotAngle, mEmitterAxis );
 	
 	if( mEnableConstraints ) {
 		applyEmmiterConstraints();
 	}
 	
 	// add particles
-	if( mouseIsDown && mEmitterHeat > 0.5f ){
-		int depth = mouseLoc.y - 380;
+	if( mouseDown && mEmitterHeat > 0.5f ){
+		int depth = newPos.y - 380;
 		float per = depth/340.0f;
 		vec3 vel = mEmitterVel * per;
 		vel.y *= 0.02f;
 		int numParticlesToSpawn = ( mEmitterHeat - 0.5f ) * 250;
 		if( Rand::randFloat() < 0.02f )
 			numParticlesToSpawn *= 5;
-		addParticles( numParticlesToSpawn, mEmitterLoc, mEmitterVel * per, mEmitterHeat, mEmitterRadius );
+		addParticles( numParticlesToSpawn, mEmitterPos, mEmitterVel * per, mEmitterHeat, mEmitterRadius );
 	}
 	
 	// add particles
-	if( mouseLoc.y > 380 && mEnableConstraints && mEmitterHeat > 0.5f ){
-		int depth = ( mouseLoc.y - 380 ) / 8;
+	if( newPos.y > 380 && mEnableConstraints && mEmitterHeat > 0.5f ){
+		int depth = ( newPos.y - 380 ) / 8;
 		float per = depth/340.0f;
 		vec3 vel = mEmitterVel * per;
 		vel.y *= 0.02f;
-		addParticles( depth * mEmitterHeat * 1, mEmitterLoc + vec3( 0.0f, per * mEmitterLoc.y, 0.0f ), vel, mEmitterHeat, mEmitterRadius );
+		addParticles( depth * mEmitterHeat * 1, mEmitterPos + vec3( 0.0f, per * mEmitterPos.y, 0.0f ), vel, mEmitterHeat, mEmitterRadius );
 	}
 	
 }

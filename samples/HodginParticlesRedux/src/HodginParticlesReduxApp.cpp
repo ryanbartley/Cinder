@@ -26,12 +26,12 @@ class HodginParticlesReduxApp : public App {
 	void draw() override;
 	
 	void setupParams();
-
-	vec3			mMouseLoc;
-	vec3			mMousePastLoc;
-	vec3			mMouseVel;
 	
-	bool			mIsMouseDown;
+	CameraPersp			mCamera;
+
+	vec2				mMousePos;
+	vec2				mEasedMousePos;
+	bool				mMouseDown;
 	
 	ParticleController	mParticleController;
 	params::InterfaceGlRef mParams;
@@ -39,12 +39,18 @@ class HodginParticlesReduxApp : public App {
 
 void HodginParticlesReduxApp::setup()
 {
-	mIsMouseDown		= false;
+	mMouseDown			= false;
+	mMousePos			= getWindowCenter();
+	mEasedMousePos		= mMousePos;
+	
+	mCamera				= CameraPersp();
+	mCamera.setPerspective( 50.0f, getWindowAspectRatio(), 1.0f, 1000.0f );
+	mCamera.lookAt( vec3( 0.0f, 150.0f, -400.0f ), vec3( 0.0f, 150.0f, 0.0f ) );
 	
 	mParticleController.setup();
 	setupParams();
 	
-	gl::clearColor( ColorA( 0.0025f, 0.0025f, 0.0025f, 1 ) );
+	gl::clearColor( Color( 0.1f, 0.1f, 0.1f ) );
 }
 
 
@@ -62,7 +68,7 @@ void HodginParticlesReduxApp::keyDown( KeyEvent event )
 
 void HodginParticlesReduxApp::mouseMove( MouseEvent event )
 {
-	mMouseLoc = vec3( event.getX(), event.getY(), 0.0f );
+	mMousePos = event.getPos();
 }
 
 void HodginParticlesReduxApp::mouseDrag( MouseEvent event )
@@ -72,28 +78,27 @@ void HodginParticlesReduxApp::mouseDrag( MouseEvent event )
 
 void HodginParticlesReduxApp::mouseDown( MouseEvent event )
 {
-	mIsMouseDown = true;
+	mMouseDown = true;
 }
 
 void HodginParticlesReduxApp::mouseUp( MouseEvent event )
 {
-	mIsMouseDown = false;
+	mMouseDown = false;
 }
 
 void HodginParticlesReduxApp::update()
 {
-	mMousePastLoc -= ( mMousePastLoc - mMouseLoc ) * 0.01f;
-	mMouseVel -= ( mMouseVel - ( mMousePastLoc - mMouseLoc ) ) * 0.01f;
+	Ray ray = mCamera.generateRay( mMousePos, getWindowSize() );
+	mParticleController.update( ray, mMouseDown );
 	
-	mParticleController.mCurrentMouseVel = mMouseVel;
-	mParticleController.update( mMouseLoc, mIsMouseDown );
+	mEasedMousePos -= ( mEasedMousePos - mMousePos ) * 0.15f;
 }
 
 
 void HodginParticlesReduxApp::draw()
 {
 	gl::clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	gl::setMatricesWindowPersp( getWindowSize() );
+	gl::setMatrices( mCamera );
 	
 	mParticleController.render();
 	

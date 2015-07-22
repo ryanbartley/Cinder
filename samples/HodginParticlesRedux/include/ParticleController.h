@@ -21,8 +21,8 @@ class ParticleController {
 	
 	ParticleController();
 	void setup();
-	void update( const ci::vec3 &mouseLoc, bool mouseIsDown );
-	void updateEmitter( const ci::vec3 &mouseLoc, bool mouseIsDown );
+	void update( const ci::Ray &ray, bool mouseDown );
+	void updateEmitter( const ci::Ray &ray, bool mouseDown );
 	void updateParticles();
 	void render();
 
@@ -41,10 +41,10 @@ class ParticleController {
 	std::vector<Constraint*>	mConstraints;
 	
 	// Emitter info
-	ci::vec3			mEmitterLoc, mEmitterVel;
-	float				mEmitterRadius, mEmitterRadiusDest,
-						mEmitterHeat, mEmitterSpinSpeed;
-	ci::vec3			mCurrentMouseVel, mCurrentMousePos;
+	ci::mat4		mEmitterMatrix;
+	ci::vec3		mEmitterPos, mEmitterVel, mEmitterAcc, mEmitterAxis;
+	float			mEmitterRadius, mEmitterRotSpeed, mEmitterRotAngle, mEmitterHeat;
+	ci::vec2		mEasedPosition;
 	
 	// Perlin info
 	ci::Perlin	mPerlin				= ci::Perlin(3);
@@ -87,25 +87,25 @@ void ParticleController::applyEmmiterConstraints()
 {
 	for( auto c : mConstraints ) {
 		if( c->mNormal.x > 0.0f ){
-			auto tempX = ci::constrain( mEmitterLoc.x, c->mMinValue, c->mMaxValue );
-			if( tempX != mEmitterLoc.x ) {
-				mEmitterLoc.x = tempX;
+			auto tempX = ci::constrain( mEmitterPos.x, c->mMinValue, c->mMaxValue );
+			if( tempX != mEmitterPos.x ) {
+				mEmitterPos.x = tempX;
 				mIsTouchingConstraint = true;
 			}
 		}
 		
 		if( c->mNormal.y > 0.0f ){
-			auto tempY = ci::constrain( mEmitterLoc.y, c->mMinValue, c->mMaxValue );
-			if( tempY != mEmitterLoc.y ) {
-				mEmitterLoc.y = tempY;
+			auto tempY = ci::constrain( mEmitterPos.y, c->mMinValue, c->mMaxValue );
+			if( tempY != mEmitterPos.y ) {
+				mEmitterPos.y = tempY;
 				mIsTouchingConstraint = true;
 			}
 		}
 		
 		if( c->mNormal.z > 0.0f ){
-			auto tempZ = ci::constrain( mEmitterLoc.z, c->mMinValue, c->mMaxValue );
-			if( tempZ != mEmitterLoc.z ) {
-				mEmitterLoc.z = tempZ;
+			auto tempZ = ci::constrain( mEmitterPos.z, c->mMinValue, c->mMaxValue );
+			if( tempZ != mEmitterPos.z ) {
+				mEmitterPos.z = tempZ;
 				mIsTouchingConstraint = true;
 			}
 		}

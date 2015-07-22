@@ -88,74 +88,48 @@ void ParticleRender::bufferParticleTails( uint32_t numActiveParticles, const std
 
 void EmitterRender::setup()
 {
-	auto format			= gl::Texture2d::Format().wrap( GL_REPEAT );
-	mDiffuseTexture		= gl::Texture::create( loadImage( loadAsset( "emitter.png" ) ), format );
-	mNormalTexture		= gl::Texture::create( loadImage( loadAsset( "normal.png" ) ), format );
-	mHeightTexture		= gl::Texture::create( loadImage( loadAsset( "bump.png" ) ), format );
-	mSpecTexture		= gl::Texture::create( loadImage( loadAsset( "specExponent.png" ) ), format );
+	auto format			= gl::Texture2d::Format().wrapS( GL_REPEAT ).wrapT( GL_REPEAT );
+	mDiffuseTex			= gl::Texture::create( loadImage( loadAsset( "diffuse.png" ) ),				format );
+	mNormalTex			= gl::Texture::create( loadImage( loadAsset( "normal.png" ) ),				format );
+	mAoTex				= gl::Texture::create( loadImage( loadAsset( "ambientOcclusion.png" ) ),	format );
+	mHeightTex			= gl::Texture::create( loadImage( loadAsset( "height.png" ) ),				format );
+	mReflOccTex			= gl::Texture::create( loadImage( loadAsset( "reflectiveOcclusion.png" ) ),	format );
 	
-	try {
-		mEmitterShader	= gl::GlslProg::create( gl::GlslProg::Format()
-											   .vertex( loadAsset( "emitter_vert.glsl" ) )
-											   .fragment( loadAsset( "emitter_frag.glsl" ) ) );
+	try{
+		mEmitterGlsl	= gl::GlslProg::create( loadAsset( "emitter.vert" ), loadAsset( "emitter.frag" ) );
 	}
-	catch( gl::GlslProgExc &exc ) {
-		std::cout << "GlslProg error, what: " << exc.what() << std::endl;
+	catch( gl::GlslProgCompileExc e ){
+		std::cout << e.what() << std::endl;
 	}
-	catch( ci::Exception &exc ) {
-		std::cout << "Unable to load shader, what: " << exc.what() << std::endl;
-	}
+	mEmitterGlsl->uniform( "uDiffuseTex",	0 );
+	mEmitterGlsl->uniform( "uNormalTex",	1 );
+	mEmitterGlsl->uniform( "uAoTex",		2 );
+	mEmitterGlsl->uniform( "uHeightTex",	3 );
+	mEmitterGlsl->uniform( "uReflOccTex",	4 );
 	
-	mEmitterShader->uniform( "texDiffuse", 0 );
-	mEmitterShader->uniform( "texNormal", 1 );
-	mEmitterShader->uniform( "texHeight", 2 );
-	mEmitterShader->uniform( "texSpec", 3 );
-	
-	auto sphereGeom		= geom::Sphere().subdivisions( 100 ).radius( 0.5f );
-	mSphere				= gl::Batch::create( sphereGeom,  mEmitterShader );
+	auto sphereGeom		= geom::Sphere().subdivisions( 200 ).radius( 1.0f );
+	mSphere				= gl::Batch::create( sphereGeom,  mEmitterGlsl );
 }
 
 void EmitterRender::renderEmitter( ParticleController &controller )
 {
-	static auto lightDirection = normalize( vec3( 0.0f, 0.25f, 1.0f ) );
+	gl::ScopedGlslProg		prog( mEmitterGlsl );
+	gl::ScopedBlendAlpha	alpha;
+	gl::ScopedDepth			depth( true, true );
+	gl::ScopedTextureBind	tex0( mDiffuseTex,	0 );
+	gl::ScopedTextureBind	tex1( mNormalTex,	1 );
+	gl::ScopedTextureBind	tex2( mAoTex,		2 );
+	gl::ScopedTextureBind	tex3( mHeightTex,	3 );
+	gl::ScopedTextureBind	tex4( mReflOccTex,	4 );
 	
-	controller.mEmitterRadius = 50.0f - controller.mEmitterSpinSpeed * 30.0f + 70.0f * ( 1.0f - controller.mEmitterSpinSpeed );
+	gl::ScopedModelMatrix	model;
+	gl::multModelMatrix( controller.mEmitterMatrix );
 	
-	gl::ScopedBlendAlpha scopeBlend;
-	gl::ScopedTextureBind scopeTex0( mDiffuseTexture, 0 );
-	gl::ScopedTextureBind scopeTex1( mNormalTexture, 1 );
-	gl::ScopedTextureBind scopeTex2( mHeightTexture, 2 );
-	gl::ScopedTextureBind scopeTex3( mSpecTexture, 3 );
-	
-	mEmitterShader->uniform( "heat", controller.mEmitterHeat );
-	mEmitterShader->uniform( "mouseVel", controller.mCurrentMouseVel * 0.025f );
-	mEmitterShader->uniform( "spinSpeed", controller.mEmitterSpinSpeed );
-	mEmitterShader->uniform( "counter", (float)getElapsedFrames() );
-	mEmitterShader->uniform( "lightDir", lightDirection );
-	mEmitterShader->uniform( "minHeight", 0.0f );
-	
-	{
-		gl::ScopedDepth scopeDepth( true );
-		gl::ScopedModelMatrix scopeModel;
-		gl::translate( controller.mEmitterLoc );
-		gl::scale( vec3( controller.mEmitterRadius * 2.0f ) );
-		gl::rotate( toRadians( 180.0f ), vec3( 0, 1, 0 ) );
-		gl::color( ColorA( 1.0f, 1.0f, 1.0f, 1.0f ) );
-		mSphere->draw();
-	}
-	gl::ScopedDepth scopeDepth( true, false );
-	glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
-	for( int i=0; i<20; i++ ){
-		mEmitterShader->uniform( "minHeight", (float)i/20.0f );
-		auto localRadius = 52 + i * 0.1f;
-		auto localAlpha = 0.1f;
-		gl::ScopedModelMatrix scopeModel;
-		gl::translate( controller.mEmitterLoc );
-		controller.mEmitterRadius = localRadius - controller.mEmitterSpinSpeed * 30.0f + 70.0f * ( 1.0f - controller.mEmitterSpinSpeed );
-		gl::scale( vec3( controller.mEmitterRadius * 2.0f ) );
-		gl::color( ColorA( 1.0f, 1.0f, 1.0f, localAlpha ) );
-		mSphere->draw();
-	}
+	mEmitterGlsl->uniform( "uTime",			(float)getElapsedSeconds() * 0.1f );
+	mEmitterGlsl->uniform( "uRotSpeed",		controller.mEmitterRotSpeed );
+	mEmitterGlsl->uniform( "uSOffset",		(float)controller.mEasedPosition.x/(float)getWindowWidth() * 5.0f );
+	mEmitterGlsl->uniform( "uTOffset",		(float)controller.mEasedPosition.y/(float)getWindowHeight() * 5.0f );
+	mSphere->draw();
 }
 
 void RoomRender::setup( const std::vector<Constraint*> &constraints )

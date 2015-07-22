@@ -59,10 +59,13 @@ public:
 	void renderEmitter( ParticleController &controller );
 	
 private:
-	ci::gl::BatchRef	mSphere;
-	ci::gl::TextureRef	mDiffuseTexture, mNormalTexture,
-						mHeightTexture, mSpecTexture;
-	ci::gl::GlslProgRef	mEmitterShader;
+	ci::gl::BatchRef		mSphere;
+	ci::gl::GlslProgRef		mEmitterGlsl;
+	ci::gl::TextureRef		mDiffuseTex;
+	ci::gl::TextureRef		mNormalTex;
+	ci::gl::TextureRef		mAoTex;
+	ci::gl::TextureRef		mHeightTex;
+	ci::gl::TextureRef		mReflOccTex;
 };
 
 // Forward Declaration.
