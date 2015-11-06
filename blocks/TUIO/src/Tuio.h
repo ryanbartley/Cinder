@@ -36,11 +36,16 @@ namespace cinder { namespace tuio {
 namespace detail {
 	
 struct Profile {
+	
 	int32_t getSessionId() { return mSessionId; }
 	const std::string& getSource() { return mSource; }
 	
 protected:
 	Profile( const osc::Message &msg );
+	Profile( const Profile &other ) = default;
+	Profile( Profile &&other ) = default;
+	Profile& operator=( const Profile &other ) = default;
+	Profile& operator=( Profile &&other ) = default;
 	~Profile() = default;
 	
 	int32_t		mSessionId;
@@ -48,13 +53,30 @@ protected:
 	
 	friend class Client;
 };
+	
+template<typename T>
+struct ProfileCompare {
+	bool operator()( const T& lhs, const T& rhs ) const
+	{
+		return lhs.getSessionId() < rhs.getSessionId();
+	}
+};
 
 template<typename VEC_T>
 struct Cursor : public Profile {
 	Cursor( const osc::Message &msg );
+	Cursor( const Cursor &other ) = default;
+	Cursor( Cursor &&other ) = default;
+	Cursor& operator=( const Cursor &other ) = default;
+	Cursor& operator=( Cursor &&other ) = default;
+	~Cursor() = default;
+	
 	const VEC_T&	getPosition() const { return mPosition; }
 	const VEC_T&	getVelocity() const { return mVelocity; }
 	float			getAcceleration() const { return mAcceleration; }
+	
+	app::TouchEvent::Touch	convertToTouch() const;
+	
 protected:
 	VEC_T		mPosition,
 				mVelocity;
@@ -64,6 +86,13 @@ protected:
 template<typename VEC_T, typename ROT_T>
 struct Object : public Profile {
 	Object( const osc::Message &msg );
+	
+	Object( const Object &other ) = default;
+	Object( Object &&other ) = default;
+	Object& operator=( const Object &other ) = default;
+	Object& operator=( Object &&other ) = default;
+	~Object() = default;
+	
 	int32_t			getClassId() const { return mClassId; }
 	const VEC_T&	getPosition() const { return mPosition; }
 	const VEC_T&	getVelocity() const { return mVelocity; }
@@ -81,6 +110,13 @@ protected:
 template<typename VEC_T, typename ROT_T, typename DIM_T>
 struct Blob : public Profile {
 	Blob( const osc::Message &msg );
+	
+	Blob( const Blob &other ) = default;
+	Blob( Blob &&other ) = default;
+	Blob& operator=( const Blob &other ) = default;
+	Blob& operator=( Blob &&other ) = default;
+	~Blob() = default;
+	
 	const VEC_T&	getPosition() const { return mPosition; }
 	const VEC_T&	getVelocity() const { return mVelocity; }
 	const ROT_T&	getAngle() const { return mAngle; }
@@ -127,27 +163,20 @@ public:
 	using ProfileFn = std::function<void(const Profile&)>;
 	using TouchesFn = std::function<void (app::TouchEvent)>;
 	
-	Client( uint16_t port = DEFAULT_TUIO_PORT, asio::io_service &io = ci::app::App::get()->io_service() );
-	
-	//! Creates a TUIO connection on port \a port and begins listening for incoming messages
-	void connect();
-	//! Closes the connection if one is open
-	void disconnect();
-	//! Returns whether their is an active TUIO connection
-	bool isConnected() const { return mConnected; }
+	Client( const app::WindowRef &window,  uint16_t localPort = DEFAULT_TUIO_PORT, asio::io_service &io = ci::app::App::get()->io_service() );
 	
 	//! Returns a vector of currently active sources (IP addresses)
 	const std::set<std::string>&	getSources() const;
 	
 	//! Registers an async callback which fires when a new cursor is added
 	template<typename T>
-	void	registerProfileAddedCallback( ProfileFn<T> callback );
+	void	setProfileAddedCallback( ProfileFn<T> callback );
 	//! Registers an async callback which fires when a cursor is updated
 	template<typename T>
-	void	registerProfileUpdatedCallback( ProfileFn<T> callback );
+	void	setProfileUpdatedCallback( ProfileFn<T> callback );
 	//! Registers an async callback which fires when a cursor is removed
 	template<typename T>
-	void	registerProfileRemovedCallback( ProfileFn<T> callback );
+	void	setProfileRemovedCallback( ProfileFn<T> callback );
 	
 	//! Registers an async callback for touchesBegan events, derived from \c 2Dcur messages.
 	//! Returns a unique identifier which can be used as a parameter to unregisterTouchesBegan().
@@ -167,6 +196,8 @@ public:
 		registerTouchesEnded( std::bind( &ci::app::App::touchesEnded, app, std::placeholders::_1 ) );
 	}
 	
+	void handleMessage( const osc::Message &message );
+	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
 	std::vector<app::TouchEvent::Touch>		getActiveTouches(std::string source = "") const;
 	
@@ -180,44 +211,47 @@ public:
 	static const int32_t DEFAULT_PAST_FRAME_THRESHOLD = 10;
 	
 private:
+	struct ProfileHandlerBase  {
+		virtual ~ProfileHandlerBase() = default;
+		virtual void handleMessage( const osc::Message &message ) = 0;
+	};
 	
 	// This class handles each of the profile types, currently Object: '2Dobj' and Cursor: '2Dcur'
 	template<typename T>
-	struct ProfileHandler {
-		using ProfileMap = std::map<std::string, std::vector<T>>;
-		template<typename Fn>
-		using Signal = boost::signals2::signal<Fn>;
+	struct ProfileHandler : public ProfileHandlerBase {
+		//! TODO: Need to figure out about "PastFrameThreshold", got rid of it.
+		ProfileHandler() {}
 		
-		ProfileHandler( int32_t pastFrameThreshold ) : mPastFrameThreshold( pastFrameThreshold ) {}
+		void setAddHandler( ProfileFn<T> callback );
+		void setUpdateHandler( ProfileFn<T> callback );
+		void setRemoveHandler( ProfileFn<T> callback );
+		void handleMessage( const osc::Message &message ) override;
+		void handleAdds( std::vector<int32_t> &deleteIds );
+		void handleUpdates();
+		void handleRemoves();
 		
-		void			handleMessage( const osc::Message &message );
-		std::vector<T>	getInstancesAsVector( const std::string &source = "" ) const;
+		std::vector<T> getCurrentActiveProfiles();
 		
-		std::set<std::string>					mSources;
-		
-		//////////////////////////////////////////////////////////////////////
-		// For all of the following maps, the key is the source IP address
-		//////////////////////////////////////////////////////////////////////
-		
-		// current instances of this profile
-		std::map<std::string, std::map<int32_t,T>>		mInstances;
+		std::string								mCurrentSource;
+		std::set<T, detail::ProfileCompare<T>>	mSetOfCurrentTouches,
+												mNextFrameTouches;
+		std::set<int32_t>						mCurrentAliveIds;
+		std::map<std::string, int32_t>			mSourceFrameNums;
 		// containers for changes which will be propagated upon receipt of 'fseq'
-		ProfileMap		mProfileUpdates, mProfileAdds, mProfileDeletes;
-		// Last frame we processed per the 'fseq' message
-		std::map<std::string, int32_t> mPreviousFrame;
-		
-		Signal<void(T)>					mAddedSignal, mUpdatedSignal, mRemovedSignal;
-		Signal<void(app::TouchEvent)>	mTouchesBeganSignal, mTouchesMovedSignal, mTouchesEndedSignal;
-
-		int32_t						mPastFrameThreshold;
+		ProfileFn<T>	mAddCallback, mUpdateCallback, mRemoveCallback;
+		std::mutex		mAddMutex, mUpdateMutex, mRemoveMutex;
 	};
+	
+	template<typename T>
+	const char* getOscAddressFromType();
+	
+	template<typename T>
+	void handleProfile( const T &profile );
 	
 	osc::ReceiverUdp	mListener;
 	
-	std::unique_ptr<ProfileHandler<Object>>		mHandlerObject;
-	std::unique_ptr<ProfileHandler<Cursor>>		mHandlerCursor;
-	std::unique_ptr<ProfileHandler<Cursor25d>>	mHandlerCursor25d;
-	std::set<std::string>						mSources;
+	std::map<std::string, std::unique_ptr<ProfileHandlerBase>>	mHandlers;
+	std::set<std::string>										mSources;
 	
 	bool				mConnected;
 	mutable std::mutex	mMutex;
