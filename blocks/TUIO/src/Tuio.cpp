@@ -19,10 +19,16 @@ namespace cinder { namespace  tuio {
 	
 namespace detail {
 	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Profile
+	
 Profile::Profile( const osc::Message &msg )
 : mSessionId( msg[1].int32() )
 {
 }
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Cursor
 
 template<>
 Cursor<ci::vec2>::Cursor( const osc::Message &msg )
@@ -48,6 +54,9 @@ app::TouchEvent::Touch Cursor<T>::convertToTouch() const
 								nullptr );
 	return ret;
 }
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Object
 	
 template<>
 Object<ci::vec2, float>::Object( const osc::Message &msg )
@@ -78,6 +87,9 @@ Object<ci::vec3, ci::vec3>::Object( const osc::Message &msg )
 	mAcceleration( msg[15].flt() ), mRotateAccel( msg[16].flt() )
 {
 }
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Blob
 	
 template<>
 Blob<ci::vec2, float, ci::vec2>::Blob( const osc::Message &msg )
@@ -111,21 +123,84 @@ Blob<ci::vec3, ci::vec3, ci::vec3>::Blob( const osc::Message &msg )
 	
 } // namespace detail
 	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Blob2D
+	
 Blob2D::Blob2D( const osc::Message &msg )
 : Blob( msg )
 {
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Blob25D
+	
 Blob25D::Blob25D( const osc::Message &msg )
 : Blob( msg )
 {
 }
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Blob3D
 
 Blob3D::Blob3D( const osc::Message &msg )
 : Blob( msg )
 {
 }
 	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Client
+	
+Client::Client( const app::WindowRef &window,  uint16_t localPort, asio::io_service &io )
+{
+	
+}
+Client::Client( const osc::ReceiverBase *ptr )
+{
+	
+}
+
+void Client::bind()
+{
+	
+}
+	
+void Client::listen()
+{
+	
+}
+
+void Client::close()
+{
+	
+}
+vector<app::TouchEvent::Touch> Client::getActiveTouches( std::string source ) const
+{
+	lock_guard<mutex> lock( mMutex );
+
+	double currentTime = app::getElapsedSeconds();
+	vector<app::TouchEvent::Touch> result;
+	if ( source == "" ) {
+		// Get cursors from all sources
+		auto & sources = getSources();
+		int sourcenum = 0;
+		for( auto & source :sources ) {
+			vector<Cursor> cursors = mHandlerCursor->getInstancesAsVector( source );
+			for( auto & inst : cursors ) {
+				result.push_back( inst.getTouch( currentTime, app::getWindowSize() ) );
+			}
+			++sourcenum;
+		}
+	} else {
+		// Get cursors from one source
+		auto cursors = mHandlerCursor->getInstancesAsVector(source);
+		for( auto & inst : cursors ) {
+			result.push_back( inst.getTouch( currentTime, app::getWindowSize() ) );
+		}
+	}
+	
+	return result;	
+}
+
 template<typename T>
 const char* Client::getOscAddressFromType()
 {
@@ -251,7 +326,13 @@ void Client::setProfileRemovedCallback( ProfileFn<TouchEvent> callback )
 	}
 }
 	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// Detail
+	
 namespace detail {
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// ProfileHandler templated
 	
 template<typename CallbackType, typename ProfileType>
 void ProfileHandler<CallbackType, ProfileType>::setAddHandler( ProfileFn<CallbackType> callback )
@@ -364,6 +445,9 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 		}
 	}
 }
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// ProfileHandler specialized (callback - TouchEvent, profile - Cursor2D)
 	
 void ProfileHandler<TouchEvent, Cursor2D>::setAddHandler( ProfileFn<TouchEvent> callback )
 {
@@ -480,87 +564,4 @@ void ProfileHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &me
 	}
 }
 		
-}
-	
-//
-//template<typename T>
-//vector<T> Client::ProfileHandler<T>::getInstancesAsVector( const std::string &source ) const
-//{
-//	vector<T> result;
-//	
-//	if( source == "" ) {
-//		// Get instances across all sources
-//		for( auto & s : mSources ) {
-//			auto instanceMap = mInstances.find(s);
-//			if ( instanceMap != mInstances.end() ) {
-//				for ( auto & inst : instanceMap->second )
-//					result.push_back( inst.second );
-//			}
-//		}
-//	}
-//	else {
-//		// We collect only the instances owned by the specified source
-//		auto instanceMap = mInstances.find(source);
-//		if ( instanceMap != mInstances.end() ) {
-//			for ( auto & inst : instanceMap->second )
-//				result.push_back( inst.second );
-//		}
-//	}
-//	return result;
-//}
-//
-//Client::Client( uint16_t port, asio::io_service &io )
-//: mListener( port, udp::v4(), io ),
-//mHandlerObject( new ProfileHandler<Object>( DEFAULT_PAST_FRAME_THRESHOLD ) ),
-//mHandlerCursor( new ProfileHandler<Cursor>( DEFAULT_PAST_FRAME_THRESHOLD ) ),
-//mHandlerCursor25d( new ProfileHandler<Cursor25d>( DEFAULT_PAST_FRAME_THRESHOLD ) )
-//{
-//}
-//
-//void Client::connect()
-//{
-//	mListener.bind();
-//	mListener.setListener( "/tuio/2Dobj", std::bind( &ProfileHandler<Object>::handleMessage, mHandlerObject.get(), std::placeholders::_1 ) );
-//	mListener.setListener( "/tuio/2Dcur", std::bind( &ProfileHandler<Cursor>::handleMessage, mHandlerCursor.get(), std::placeholders::_1 ) );
-//	mListener.setListener( "/tuio/25Dcur", std::bind( &ProfileHandler<Cursor25d>::handleMessage, mHandlerCursor25d.get(), std::placeholders::_1 ) );
-//	mListener.listen();
-//	mConnected = true;
-//}
-//
-//void Client::disconnect()
-//{
-//	lock_guard<mutex> lock( mMutex );
-//	mListener.close();
-//	mConnected = false;
-//}
-//
-//
-//vector<app::TouchEvent::Touch> Client::getActiveTouches( std::string source ) const
-//{
-//	lock_guard<mutex> lock( mMutex );
-//	
-//	double currentTime = app::getElapsedSeconds();
-//	vector<app::TouchEvent::Touch> result;
-//	if ( source == "" ) {
-//		// Get cursors from all sources
-//		auto & sources = getSources();
-//		int sourcenum = 0;
-//		for( auto & source :sources ) {
-//			vector<Cursor> cursors = mHandlerCursor->getInstancesAsVector( source );
-//			for( auto & inst : cursors ) {
-//				result.push_back( inst.getTouch( currentTime, app::getWindowSize() ) );
-//			}
-//			++sourcenum;
-//		}
-//	} else {
-//		// Get cursors from one source
-//		auto cursors = mHandlerCursor->getInstancesAsVector(source);
-//		for( auto & inst : cursors ) {
-//			result.push_back( inst.getTouch( currentTime, app::getWindowSize() ) );
-//		}
-//	}
-//	
-//	return result;	
-//}
-//
-}} // namespace tuio // namespace cinder
+}}} // namespace detail // namespace tuio // namespace cinder
