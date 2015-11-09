@@ -126,15 +126,6 @@ Blob3D::Blob3D( const osc::Message &msg )
 {
 }
 	
-	
-//app::TouchEvent::Touch ProfileBase::getTouch( double time, const vec2 &posScale ) const
-//{
-//	return app::TouchEvent::Touch( getPos() * posScale,
-//								   getPrevPos() * posScale,
-//								   (uint32_t)getSessionId(),
-//								   time, NULL );
-//}
-	
 template<typename T>
 const char* Client::getOscAddressFromType()
 {
@@ -152,22 +143,23 @@ const char* Client::getOscAddressFromType()
 	else return "Unknown Target";
 }
 
-template<typename T>
-void Client::setProfileAddedCallback( ProfileFn<T> callback )
+template<typename CallbackType>
+void Client::setProfileAddedCallback( ProfileFn<CallbackType> callback )
 {
-	auto address = getOscAddressFromType<T>();
+	auto address = getOscAddressFromType<CallbackType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<ProfileHandler<T>*>(found->second.get());
+		auto profile = dynamic_cast<detail::ProfileHandler<CallbackType>*>(found->second.get());
 		profile->setAddHandler( callback );
 	}
 	else {
 		// TODO: Add listener to osc here
-		auto profile = std::unique_ptr<ProfileHandler<T>>( new ProfileHandler<Cursor2D>() );
+		auto profile = std::unique_ptr<detail::ProfileHandler<CallbackType>>( new detail::ProfileHandler<CallbackType>() );
 		profile->setAddHandler( callback );
 		mHandlers.insert( { address, std::move( profile ) } );
 	}
 }
+	
 	
 template<typename T>
 void Client::setProfileUpdatedCallback( ProfileFn<T> callback )
@@ -175,12 +167,12 @@ void Client::setProfileUpdatedCallback( ProfileFn<T> callback )
 	auto address = getOscAddressFromType<T>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<ProfileHandler<T>*>(found->second.get());
+		auto profile = dynamic_cast<detail::ProfileHandler<T>*>(found->second.get());
 		profile->setUpdateHandler( callback );
 	}
 	else {
 		// TODO: Add listener to osc here
-		auto profile = std::unique_ptr<ProfileHandler<T>>( new ProfileHandler<Cursor2D>() );
+		auto profile = std::unique_ptr<detail::ProfileHandler<T>>( new detail::ProfileHandler<T>() );
 		profile->setUpdateHandler( callback );
 		mHandlers.insert( { address, std::move( profile ) } );
 	}
@@ -192,40 +184,98 @@ void Client::setProfileRemovedCallback( ProfileFn<T> callback )
 	auto address = getOscAddressFromType<T>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<ProfileHandler<T>*>(found->second.get());
+		auto profile = dynamic_cast<detail::ProfileHandler<T>*>(found->second.get());
 		profile->setRemoveHandler( callback );
+		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+												   profile.get(), std::placeholders::_1 ) );
 	}
 	else {
 		// TODO: Add listener to osc here
-		auto profile = std::unique_ptr<ProfileHandler<T>>( new ProfileHandler<Cursor2D>() );
+		auto profile = std::unique_ptr<detail::ProfileHandler<T>>( new detail::ProfileHandler<Cursor2D>() );
 		profile->setRemoveHandler( callback );
+		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+												   profile.get(), std::placeholders::_1 ) );
 		mHandlers.insert( { address, std::move( profile ) } );
 	}
 }
 	
-template<typename T>
-void Client::ProfileHandler<T>::setAddHandler( ProfileFn<T> callback )
+template<>
+void Client::setProfileAddedCallback( ProfileFn<TouchEvent> callback )
+{
+	auto address = getOscAddressFromType<TouchEvent>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		auto profile = dynamic_cast<detail::ProfileHandler<TouchEvent, Cursor2D>*>(found->second.get());
+		profile->setAddHandler( callback );
+	}
+	else {
+		// TODO: Add listener to osc here
+		auto profile = std::unique_ptr<detail::ProfileHandler<TouchEvent, Cursor2D>>( new detail::ProfileHandler<TouchEvent, Cursor2D>() );
+		profile->setAddHandler( callback );
+		mHandlers.insert( { address, std::move( profile ) } );
+	}
+}
+
+	
+template<>
+void Client::setProfileUpdatedCallback( ProfileFn<TouchEvent> callback )
+{
+	auto address = getOscAddressFromType<TouchEvent>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		auto profile = dynamic_cast<detail::ProfileHandler<TouchEvent, Cursor2D>*>(found->second.get());
+		profile->setAddHandler( callback );
+	}
+	else {
+		// TODO: Add listener to osc here
+		auto profile = std::unique_ptr<detail::ProfileHandler<TouchEvent, Cursor2D>>( new detail::ProfileHandler<TouchEvent, Cursor2D>() );
+		profile->setAddHandler( callback );
+		mHandlers.insert( { address, std::move( profile ) } );
+	}
+}
+
+template<>
+void Client::setProfileRemovedCallback( ProfileFn<TouchEvent> callback )
+{
+	auto address = getOscAddressFromType<TouchEvent>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		auto profile = dynamic_cast<detail::ProfileHandler<TouchEvent, Cursor2D>*>(found->second.get());
+		profile->setAddHandler( callback );
+	}
+	else {
+		// TODO: Add listener to osc here
+		auto profile = std::unique_ptr<detail::ProfileHandler<TouchEvent, Cursor2D>>( new detail::ProfileHandler<TouchEvent, Cursor2D>() );
+		profile->setAddHandler( callback );
+		mHandlers.insert( { address, std::move( profile ) } );
+	}
+}
+	
+namespace detail {
+	
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::setAddHandler( ProfileFn<CallbackType> callback )
 {
 	std::lock_guard<std::mutex> lock( mAddMutex );
 	mAddCallback = callback;
 }
 	
-template<typename T>
-void Client::ProfileHandler<T>::setUpdateHandler( ProfileFn<T> callback )
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::setUpdateHandler( ProfileFn<CallbackType> callback )
 {
 	std::lock_guard<std::mutex> lock( mUpdateMutex );
 	mUpdateCallback = callback;
 }
 	
-template<typename T>
-void Client::ProfileHandler<T>::setRemoveHandler( ProfileFn<T> callback )
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::setRemoveHandler( ProfileFn<CallbackType> callback )
 {
 	std::lock_guard<std::mutex> lock( mRemoveMutex );
 	mRemoveCallback = callback;
 }
 	
-template<typename T>
-void Client::ProfileHandler<T>::handleMessage( const osc::Message &message )
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &message )
 {
 	auto messageType = message[0].string();
 	
@@ -233,18 +283,40 @@ void Client::ProfileHandler<T>::handleMessage( const osc::Message &message )
 		mCurrentSource = message[1].string();
 	}
 	else if( messageType == "set" ) {
-		auto inserted = mNextFrameTouches.emplace( message );
-		if( inserted.second ) {
-			
+		auto sessionId = message[1].int32();
+		auto it = find_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
+		[sessionId]( const ProfileType &profile){
+			return sessionId == profile.getSessionId();
+		});
+		if( it == mSetOfCurrentTouches.end() ) {
+			ProfileType profile( message );
+			auto insert = lower_bound( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ), profile.getSessionId(),
+			[sessionId]( const ProfileType &profile ){
+				return profile.getSessionId() < sessionId;
+			});
+			mSetOfCurrentTouches.insert( insert, std::move( message ) );
+			mSetOfCurrentTouches.back().setSource( mCurrentSource );
+			mAdded.push_back( sessionId );
 		}
 		else {
-			inserted.first = std::move( message );
+			*it = std::move( ProfileType( message ) );
+			it->setSource( mCurrentSource );
+			mUpdated.push_back( sessionId );
 		}
 	}
 	else if( messageType == "alive" ) {
-		for( int i = 1; i < message.getNumArgs(); i++ ) {
-			mCurrentAliveIds.insert( message[i].int32() );
+		std::vector<int32_t> aliveIds( message.getNumArgs() - 1 );
+		int i = 1;
+		for( auto & aliveId : aliveIds ) {
+			aliveId = message[i++].int32();
 		}
+		std::sort( aliveIds.begin(), aliveIds.end() );
+		auto remove = remove_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
+		[&aliveIds]( const ProfileType &profile ) {
+			return binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
+		});
+		mRemovedTouches.resize( std::distance( remove, mSetOfCurrentTouches.end() ) );
+		std::move( remove, mSetOfCurrentTouches.end(), mRemovedTouches.begin() );
 	}
 	else if( messageType == "fseq" ) {
 		auto frame = message[1].int32();
@@ -252,119 +324,164 @@ void Client::ProfileHandler<T>::handleMessage( const osc::Message &message )
 		int32_t delta_frame = frame - prev_frame;
 		// TODO: figure out about past frame threshold updating, this was also in the if condition ( dframe < -mPastFrameThreshold )
 		if( frame == -1 || delta_frame > 0 ) {
-			std::vector<int32_t> deleteIds;
-			handleAdds( deleteIds );
-			handleUpdates();
-			handleRemoves();
+			auto begin = mSetOfCurrentTouches.cbegin();
+			auto end = mSetOfCurrentTouches.cend();
+			if( ! mAdded.empty() ) {
+				std::lock_guard<std::mutex> lock( mAddMutex );
+				if( mAddCallback ) {
+					for( auto & added : mAdded ) {
+						auto found = find_if( begin, end,
+						[added]( const ProfileType &profile ){
+							return added == profile.getSessionId();
+						});
+						if( found != end )
+							mAddCallback( *found );
+					}
+				}
+			}
+			if ( ! mUpdated.empty() ) {
+				std::lock_guard<std::mutex> lock( mUpdateMutex );
+				if( mUpdateCallback ) {
+					for( auto & updated : mUpdated ) {
+						auto found = find_if( begin, end,
+						[updated]( const ProfileType &profile ){
+							return updated == profile.getSessionId();
+						});
+						if( found != end )
+							mUpdateCallback( *found );
+					}
+				}
+			}
+			if( ! mRemovedTouches.empty() ){
+				std::lock_guard<std::mutex> lock( mRemoveMutex );
+				if( mRemoveCallback )
+				for( auto & removed : mRemovedTouches ) {
+					mRemoveCallback( removed );
+				}
+			}
+			
+//			mPreviousFrame[source] = ( frame == -1 ) ? mPreviousFrame[source] : frame;
 		}
 	}
 }
 	
-template<typename T>
-void Client::ProfileHandler<T>::handleAdds( std::vector<int32_t> &deleteIds )
+void ProfileHandler<TouchEvent, Cursor2D>::setAddHandler( ProfileFn<TouchEvent> callback )
 {
-	
+	std::lock_guard<std::mutex> lock( mAddMutex );
+	mAddCallback = callback;
 }
 	
-template<typename T>
-void Client::ProfileHandler<T>::handleMessage( const osc::Message &message )
+void ProfileHandler<TouchEvent, Cursor2D>::setUpdateHandler( ProfileFn<TouchEvent> callback )
+{
+	std::lock_guard<std::mutex> lock( mUpdateMutex );
+	mUpdateCallback = callback;
+}
+
+void ProfileHandler<TouchEvent, Cursor2D>::setRemoveHandler( ProfileFn<TouchEvent> callback )
+{
+	std::lock_guard<std::mutex> lock( mRemoveMutex );
+	mRemoveCallback = callback;
+}
+	
+void ProfileHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &message )
 {
 	auto messageType = message[0].string();
-	auto currentTime = app::getElapsedSeconds();
-	std::string source;// = message.getRemoteIp();
-	
-	mSources.insert( source );
 	
 	if( messageType == "source" ) {
-		
+		mCurrentSource = message[1].string();
 	}
-	if( messageType == "set" ) {
-		T inst( message );
-		
-		if( mInstances[source].find( inst.getSessionId() ) == mInstances[source].end() )
-			mProfileAdds[source].push_back( inst );
-		else
-			mProfileUpdates[source].push_back( inst );
+	else if( messageType == "set" ) {
+		auto sessionId = message[1].int32();
+		auto it = find_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
+		[sessionId]( const Cursor2D &profile){
+			return sessionId == profile.getSessionId();
+		});
+		if( it == mSetOfCurrentTouches.end() ) {
+			Cursor2D profile( message );
+			auto insert = lower_bound( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ), profile.getSessionId(),
+			[sessionId]( const Cursor2D &profile ){
+				return profile.getSessionId() < sessionId;
+			});
+			mSetOfCurrentTouches.insert( insert, std::move( message ) );
+			mSetOfCurrentTouches.back().setSource( mCurrentSource );
+			mAdded.push_back( sessionId );
+		}
+		else {
+			*it = std::move( Cursor2D( message ) );
+			it->setSource( mCurrentSource );
+			mUpdated.push_back( sessionId );
+		}
 	}
 	else if( messageType == "alive" ) {
-		set<int32_t> aliveInstances;
-		for( int i = 1; i < message.getNumArgs(); i++ )
-			aliveInstances.insert( message[i].int32() );
-		
-		// anything not in 'aliveInstances' has been removed
-		
-		// We look at all (and only) the instances owned by the source of the message
-		auto instanceMap = mInstances.find( source );
-		if ( instanceMap != mInstances.end() ) {
-			for( auto & inst : instanceMap->second ) {
-				if( aliveInstances.find( inst.first ) == aliveInstances.end() )
-					mProfileDeletes[source].push_back( inst.second );
-			}
+		std::vector<int32_t> aliveIds( message.getNumArgs() - 1 );
+		int i = 1;
+		for( auto & aliveId : aliveIds ) {
+			aliveId = message[i++].int32();
 		}
+		std::sort( aliveIds.begin(), aliveIds.end() );
+		auto remove = remove_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
+		[&aliveIds]( const Cursor2D &profile ) {
+			return binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
+		});
+		mRemovedTouches.resize( std::distance( remove, mSetOfCurrentTouches.end() ) );
+		std::move( remove, mSetOfCurrentTouches.end(), mRemovedTouches.begin() );
 	}
 	else if( messageType == "fseq" ) {
 		auto frame = message[1].int32();
-		
-		// due to UDP's unpredictability, it is possible to receive messages from "the past". Don't process these updates if that's true here
-		// note that a frame of -1 implies that this is just an update, but doesn't represent a new time so we'll just process it
-		
-		// If the frame is "too far" in the past, we assume that the source has
-		// been reset/restarted, or it's a different source, and we accept it.
-		int32_t prev_frame = mPreviousFrame[source];
-		int32_t dframe = frame - prev_frame;
-		
-		if( ( frame == -1 ) || ( dframe > 0 ) || ( dframe < -mPastFrameThreshold ) ) {
-			auto windowSize = app::getWindowSize();
-			auto window = app::WindowRef();
-			// propagate the newly added instances
-			vector<app::TouchEvent::Touch> beganTouches;
-			for( auto & added : mProfileAdds[source] ) {
-				mAddedSignal( added );
-				mInstances[source][added.getSessionId()] = added;
-				beganTouches.push_back( added.getTouch( currentTime, windowSize ) );
+		int32_t prev_frame = mSourceFrameNums[mCurrentSource];
+		int32_t delta_frame = frame - prev_frame;
+		// TODO: figure out about past frame threshold updating, this was also in the if condition ( dframe < -mPastFrameThreshold )
+		if( frame == -1 || delta_frame > 0 ) {
+			auto begin = mSetOfCurrentTouches.cbegin();
+			auto end = mSetOfCurrentTouches.cend();
+			if( ! mAdded.empty() ) {
+				std::lock_guard<std::mutex> lock( mAddMutex );
+				if( mAddCallback ) {
+					std::vector<TouchEvent::Touch> mAddTouches;
+					for( auto & added : mAdded ) {
+						auto found = find_if( begin, end,
+						[added]( const Cursor2D &profile ){
+							 return added == profile.getSessionId();
+						});
+						if( found != end )
+							mAddTouches.emplace_back( found->convertToTouch() );
+					}
+					mAddCallback( TouchEvent( ci::app::getWindow(), mAddTouches ) );
+				}
+			}
+			if ( ! mUpdated.empty() ) {
+				std::lock_guard<std::mutex> lock( mUpdateMutex );
+				if( mUpdateCallback ) {
+					std::vector<TouchEvent::Touch> mUpdateTouches;
+					for( auto & updated : mUpdated ) {
+						auto found = find_if( begin, end,
+						[updated]( const Cursor2D &profile ){
+							 return updated == profile.getSessionId();
+						});
+						if( found != end )
+							mUpdateTouches.emplace_back( found->convertToTouch() );
+					}
+					mUpdateCallback( TouchEvent( ci::app::getWindow(), mUpdateTouches ) );
+				}
+			}
+			if( ! mRemovedTouches.empty() ){
+				std::lock_guard<std::mutex> lock( mRemoveMutex );
+				if( mRemoveCallback ) {
+					std::vector<TouchEvent::Touch> mRemoveTouches;
+					for( auto & removed : mRemovedTouches ) {
+						mRemoveTouches.emplace_back(  removed.convertToTouch() );
+					}
+					mRemoveCallback( TouchEvent( ci::app::getWindow(), mRemoveTouches ) );
+				}
 			}
 			
-			// send a touchesBegan
-			if( ! beganTouches.empty() )
-				mTouchesBeganSignal( app::TouchEvent( window, beganTouches ) );
-			
-			// propagate the updated instances
-			vector<app::TouchEvent::Touch> movedTouches;
-			for( auto & updated : mProfileUpdates[source] ) {
-				mUpdatedSignal( updated );
-				mInstances[source][updated.getSessionId()] = updated;
-				movedTouches.push_back( updated.getTouch( currentTime, windowSize ) );
-			}
-			
-			// send a touchesMoved
-			if( ! movedTouches.empty() )
-				mTouchesMovedSignal( app::TouchEvent( window, movedTouches ) );
-			
-			// propagate the deleted instances
-			vector<app::TouchEvent::Touch> endedTouches;
-			auto endIt = mProfileDeletes[source].end();
-			for( auto removedIt = mProfileDeletes[source].begin(); removedIt != endIt; ++removedIt ) {
-				mRemovedSignal( *removedIt );
-				auto removedId = removedIt->getSessionId();
-				auto removedTouch = mInstances[source][removedId].getTouch( currentTime, windowSize );
-				endedTouches.push_back( removedTouch );
-				
-				// call this last - we're using it in the callbacks
-				mInstances[source].erase( removedId );
-			}
-			
-			// send a touchesEnded
-			if( ! endedTouches.empty() )
-				mTouchesEndedSignal( app::TouchEvent( app::WindowRef(), endedTouches ) );
-			
-			mPreviousFrame[source] = ( frame == -1 ) ? mPreviousFrame[source] : frame;
+			//mPreviousFrame[source] = ( frame == -1 ) ? mPreviousFrame[source] : frame;
 		}
-		
-		mProfileUpdates[source].clear();
-		mProfileAdds[source].clear();
-		mProfileDeletes[source].clear();
 	}
 }
+		
+}
+	
 //
 //template<typename T>
 //vector<T> Client::ProfileHandler<T>::getInstancesAsVector( const std::string &source ) const
