@@ -69,15 +69,15 @@ public:
 	template<typename Profile>
 	using ProfileFn = std::function<void(const Profile&)>;
 	
-	Client( const app::WindowRef &window,  uint16_t localPort = DEFAULT_TUIO_PORT, asio::io_service &io = ci::app::App::get()->io_service() );
+	Client( const app::WindowRef &window,
+		    uint16_t localPort = DEFAULT_TUIO_PORT,
+		    const asio::ip::udp &protocol = asio::ip::udp::v4(),
+		    asio::io_service &io = ci::app::App::get()->io_service() );
 	Client( const osc::ReceiverBase *ptr );
 	
 	void bind();
 	void listen();
 	void close();
-	
-	//! Returns a vector of currently active sources (IP addresses)
-	const std::set<std::string>&	getSources() const;
 	
 	//! Registers an async callback which fires when a new cursor is added
 	template<typename CallbackType>
@@ -90,7 +90,8 @@ public:
 	void	setProfileRemovedCallback( ProfileFn<CallbackType> callback );
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
-	std::vector<app::TouchEvent::Touch>		getActiveTouches(std::string source = "") const;
+	template<typename ProfileType>
+	std::vector<ProfileType> getActiveProfiles() const;
 	
 	//! Returns the threshold for a frame ID being old enough to imply a new source
 	int32_t	getPastFrameThreshold() const;
@@ -102,19 +103,16 @@ public:
 	static const int32_t DEFAULT_PAST_FRAME_THRESHOLD = 10;
 	
 private:
-	
 	template<typename T>
-	const char* getOscAddressFromType();
-
+	static const char* getOscAddressFromType();
+	
+	using ProfileHandlers = std::map<std::string, std::unique_ptr<detail::ProfileHandlerBase>>;
+	
 	std::unique_ptr<osc::ReceiverBase>	mListener;
-	
-	std::map<std::string, std::unique_ptr<detail::ProfileHandlerBase>>	mHandlers;
-	
-	std::set<std::string>										mSources;
-	
-	bool				mConnected;
+	ProfileHandlers						mHandlers;
+	app::WindowRef						mWindow;
 };
-	
+
 namespace detail {
 	
 struct Profile {
@@ -139,14 +137,15 @@ template<typename T>
 struct ProfileCompare {
 	bool operator()( const T& lhs, const T& rhs ) const
 	{
-		return lhs.getSessionId() < rhs.getSessionId();
+		return lhs.getSource() < rhs.getSource() &&
+		lhs.getSessionId() < rhs.getSessionId();
 	}
 };
 
 template<typename VEC_T>
 struct Cursor : public Profile {
 	Cursor( const osc::Message &msg );
-	Cursor( int32_t sessionId ) { mSessionId = sessionId; }
+	
 	Cursor( const Cursor &other ) = default;
 	Cursor( Cursor &&other ) = default;
 	Cursor& operator=( const Cursor &other ) = default;
@@ -227,12 +226,12 @@ struct Blob3D : public detail::Blob<ci::vec3, ci::vec3, ci::vec3> {
 	Blob3D( const osc::Message &msg );
 	float getVolume() const { return mGeometry; }
 };
-	
+
 struct ProfileHandlerBase  {
 	virtual ~ProfileHandlerBase() = default;
 	virtual void handleMessage( const osc::Message &message ) = 0;
 };
-	
+
 template<typename T>
 using ProfileFn = Client::ProfileFn<T>;
 
@@ -262,7 +261,7 @@ struct ProfileHandler : public ProfileHandlerBase {
 	ProfileFn<CallbackType>		mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex					mAddMutex, mUpdateMutex, mRemoveMutex;
 };
-	
+
 template<>
 struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase {
 	//! TODO: Need to figure out about "PastFrameThreshold", got rid of it.
@@ -286,7 +285,4 @@ struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase
 	ProfileFn<ci::app::TouchEvent>			mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex								mAddMutex, mUpdateMutex, mRemoveMutex;
 };
-	
-} // detail
-	
-} } // namespace cinder::tuio
+} } } // namespace detail // namespace tuio // namespace cinder
