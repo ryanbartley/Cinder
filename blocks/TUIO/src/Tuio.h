@@ -285,7 +285,8 @@ struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase
 	ProfileFn<ci::app::TouchEvent>			mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex								mAddMutex, mUpdateMutex, mRemoveMutex;
 };
-	
+
+// function_traits implemented by https://github.com/kennytm/utils/blob/master/traits.hpp	
 template <typename T>
 struct function_traits
 : public function_traits<decltype(&T::operator())>
