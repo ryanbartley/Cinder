@@ -33,59 +33,56 @@ using namespace std;
 
 #include "Tuio.h"
 
+void add( tuio::Cursor2D cursor ) {}
+
 class TuioClientApp : public App {
   public:
 	void setup();
-	void update();
 
-	void draw2d( tuio::Cursor2D cursor, int sourcenum );
+//	void draw2d( tuio::Cursor2D cursor, int sourcenum );
 	void draw2d( tuio::Cursor2D cursor );
 	void draw25d( tuio::Cursor25D cursor );
 	void draw();
+	
+//	void add( tuio::Cursor2D cursor );
+	
+	std::shared_ptr<tuio::Listener> tuio;
+};
 
-	tuio::Client tuio;
-
-	ci::signals::Connection	mUpdatedCallbackIndex;
+struct X {
+	void operator()( const tuio::Cursor2D &some ) {}
 };
 
 void TuioClientApp::setup()
 {
-	tuio.listen();
+
+	tuio->listen();
 	
-	tuio.setProfileAddedCallback<tuio::Cursor2D>(
-	[&]( const tuio::Cursor2D &cursor ) {
-		console() << "Cursor added " << cursor.getSessionId() << std::endl;
-	});
-	tuio.setProfileUpdatedCallback<tuio::Cursor2D>(
-	[&]( const tuio::Cursor2D &cursor ) {
-		console() << "Cursor updated " << cursor.getSessionId() << std::endl;
-	});
-	tuio.setProfileRemovedCallback<tuio::Cursor2D>(
-	[&]( const tuio::Cursor2D &cursor ) {
-		console() << "Cursor removed " << cursor.getSessionId() << std::endl;
-	});
+	std::function<void( tuio::Cursor2D )> bound = std::bind( &add, std::placeholders::_1 );
+	
+	tuio->setProfileAddedCallback( bound );
+//	tuio.setProfileUpdatedCallback<tuio::Cursor2D>(
+//	[&]( const tuio::Cursor2D &cursor ) {
+//		console() << "Cursor updated " << cursor.getSessionId() << std::endl;
+//	});
+//	tuio.setProfileRemovedCallback<tuio::Cursor2D>(
+//	[&]( const tuio::Cursor2D &cursor ) {
+//		console() << "Cursor removed " << cursor.getSessionId() << std::endl;
+//	});
 }
 
-void TuioClientApp::update()
-{
-	if( getElapsedSeconds() > 10.0f && mUpdatedCallbackIndex.isConnected() ) {
-		console() << "Unregistering cursor updated." << std::endl;
-		mUpdatedCallbackIndex.disconnect();
-	}
-}
-
-void TuioClientApp::draw2d( tuio::Cursor2D cursor, int sourcenum )
-{	
-	switch( sourcenum % 6 ) {
-		case 0: gl::color(ColorA(1.0f, 0.0f, 0.0f, 0.6f)); break;
-		case 1: gl::color(ColorA(0.0f, 1.0f, 0.0f, 0.6f)); break;
-		case 2: gl::color(ColorA(0.0f, 0.0f, 1.0f, 0.6f)); break;
-		case 3: gl::color(ColorA(1.0f, 1.0f, 0.0f, 0.6f)); break;
-		case 4: gl::color(ColorA(0.0f, 1.0f, 1.0f, 0.6f)); break;
-		case 5: gl::color(ColorA(1.0f, 0.0f, 1.0f, 0.6f)); break;
-	}
-	gl::drawSolidCircle( cursor.getPosition() * vec2(getWindowSize()), 30 );
-}
+//void TuioClientApp::draw2d( tuio::Cursor2D cursor, int sourcenum )
+//{	
+//	switch( sourcenum % 6 ) {
+//		case 0: gl::color(ColorA(1.0f, 0.0f, 0.0f, 0.6f)); break;
+//		case 1: gl::color(ColorA(0.0f, 1.0f, 0.0f, 0.6f)); break;
+//		case 2: gl::color(ColorA(0.0f, 0.0f, 1.0f, 0.6f)); break;
+//		case 3: gl::color(ColorA(1.0f, 1.0f, 0.0f, 0.6f)); break;
+//		case 4: gl::color(ColorA(0.0f, 1.0f, 1.0f, 0.6f)); break;
+//		case 5: gl::color(ColorA(1.0f, 0.0f, 1.0f, 0.6f)); break;
+//	}
+//	gl::drawSolidCircle( cursor.getPosition() * vec2(getWindowSize()), 30 );
+//}
 
 void TuioClientApp::draw2d( tuio::Cursor2D cursor )
 {
@@ -102,33 +99,33 @@ void TuioClientApp::draw25d( tuio::Cursor25D cursor )
 
 void TuioClientApp::draw()
 {
-		gl::clear( Color( 0, 0, 0 ) );
-			
-		// Draw a center dot in all the cursors, to test the ability
-		// of tuio.getCursors() to get all cursors in one vector.
-		auto cursors = tuio.getCursors();
-		for( auto cursor : cursors )
-			draw2b( cursor );
-
-		// Draw each source's cursors in a different color, to test the ability
-		// of tuio.getCursors() to get each source's cursors independently.
-		set<string> sources = tuio.getSources();
-		int sourcenum = 0;
-		for( auto source = sources.begin(); source != sources.end(); ++source,++sourcenum ) {
-			vector<tuio::Cursor> cursors = tuio.getCursors(*source);
-			for( auto cursor = cursors.begin(); cursor != cursors.end(); ++cursor ) {
-				draw2( *cursor, sourcenum );
-			}
-		}
-
-		// If there any 25d cursors, draw them with radius proportional to the z value
-		vector<tuio::Cursor25d> cursors25d = tuio.getCursors25d();
-		for( auto cursor25d = cursors25d.begin(); cursor25d != cursors25d.end(); ++cursor25d ) {
-			draw25d( *cursor25d );
-		}
-	}
-	else
-		gl::clear( Color( 0.4f, 0, 0 ) );
+//		gl::clear( Color( 0, 0, 0 ) );
+//			
+//		// Draw a center dot in all the cursors, to test the ability
+//		// of tuio.getCursors() to get all cursors in one vector.
+//		auto cursors = tuio.getCursors();
+//		for( auto cursor : cursors )
+//			draw2b( cursor );
+//
+//		// Draw each source's cursors in a different color, to test the ability
+//		// of tuio.getCursors() to get each source's cursors independently.
+//		set<string> sources = tuio.getSources();
+//		int sourcenum = 0;
+//		for( auto source = sources.begin(); source != sources.end(); ++source,++sourcenum ) {
+//			vector<tuio::Cursor> cursors = tuio.getCursors(*source);
+//			for( auto cursor = cursors.begin(); cursor != cursors.end(); ++cursor ) {
+//				draw2( *cursor, sourcenum );
+//			}
+//		}
+//
+//		// If there any 25d cursors, draw them with radius proportional to the z value
+//		vector<tuio::Cursor25d> cursors25d = tuio.getCursors25d();
+//		for( auto cursor25d = cursors25d.begin(); cursor25d != cursors25d.end(); ++cursor25d ) {
+//			draw25d( *cursor25d );
+//		}
+//	}
+//	else
+//		gl::clear( Color( 0.4f, 0, 0 ) );
 }
 
 CINDER_APP( TuioClientApp, RendererGl )

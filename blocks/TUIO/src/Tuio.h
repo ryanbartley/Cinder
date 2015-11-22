@@ -63,31 +63,31 @@ using Blob25D = detail::Blob25D;
 using Blob3D = detail::Blob3D;
 	
 
-//! Implements a client for the TUIO 1.1 protocol, described here: http://www.tuio.org/?specification
-class Client {
+//! Implements a Listener for the TUIO 1.1 protocol, described here: http://www.tuio.org/?specification
+class Listener {
 public:
 	template<typename Profile>
 	using ProfileFn = std::function<void(const Profile&)>;
 	
-	Client( const app::WindowRef &window,
+	Listener( const app::WindowRef &window,
 		    uint16_t localPort = DEFAULT_TUIO_PORT,
 		    const asio::ip::udp &protocol = asio::ip::udp::v4(),
 		    asio::io_service &io = ci::app::App::get()->io_service() );
-	Client( const osc::ReceiverBase *ptr );
+	Listener( const osc::ReceiverBase *ptr );
 	
 	void bind();
 	void listen();
 	void close();
 	
 	//! Registers an async callback which fires when a new cursor is added
-	template<typename CallbackType>
-	void	setProfileAddedCallback( ProfileFn<CallbackType> callback );
+	template<typename CallbackFn>
+	void	setProfileAddedCallback( CallbackFn callback );
 	//! Registers an async callback which fires when a cursor is updated
-	template<typename CallbackType>
-	void	setProfileUpdatedCallback( ProfileFn<CallbackType> callback );
+	template<typename CallbackFn>
+	void	setProfileUpdatedCallback( CallbackFn callback );
 	//! Registers an async callback which fires when a cursor is removed
-	template<typename CallbackType>
-	void	setProfileRemovedCallback( ProfileFn<CallbackType> callback );
+	template<typename CallbackFn>
+	void	setProfileRemovedCallback( CallbackFn callback );
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
 	template<typename ProfileType>
@@ -233,7 +233,7 @@ struct ProfileHandlerBase  {
 };
 
 template<typename T>
-using ProfileFn = Client::ProfileFn<T>;
+using ProfileFn = Listener::ProfileFn<T>;
 
 template<typename CallbackType, typename ProfileType = CallbackType>
 struct ProfileHandler : public ProfileHandlerBase {
@@ -285,4 +285,323 @@ struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase
 	ProfileFn<ci::app::TouchEvent>			mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex								mAddMutex, mUpdateMutex, mRemoveMutex;
 };
-} } } // namespace detail // namespace tuio // namespace cinder
+	
+template <typename T>
+struct function_traits
+: public function_traits<decltype(&T::operator())>
+{};
+
+template <typename ReturnType, typename... Args>
+struct function_traits<ReturnType(Args...)>
+{
+	/**
+	 .. type:: type result_type
+	 
+	 The type returned by calling an instance of the function object type *F*.
+	 */
+	typedef ReturnType result_type;
+	
+	/**
+	 .. type:: type function_type
+	 
+	 The function type (``R(T...)``).
+	 */
+	typedef ReturnType function_type(Args...);
+	
+	/**
+	 .. data:: static const size_t arity
+	 
+	 Number of arguments the function object will take.
+	 */
+	enum { arity = sizeof...(Args) };
+	
+	/**
+	 .. type:: type arg<n>::type
+	 
+	 The type of the *n*-th argument.
+	 */
+	template <size_t i>
+	struct arg
+	{
+		typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
+	};
+};
+
+template <typename ReturnType, typename... Args>
+struct function_traits<ReturnType(*)(Args...)>
+: public function_traits<ReturnType(Args...)>
+{};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct function_traits<ReturnType(ClassType::*)(Args...)>
+: public function_traits<ReturnType(Args...)>
+{
+	typedef ClassType& owner_type;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct function_traits<ReturnType(ClassType::*)(Args...) const>
+: public function_traits<ReturnType(Args...)>
+{
+	typedef const ClassType& owner_type;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct function_traits<ReturnType(ClassType::*)(Args...) volatile>
+: public function_traits<ReturnType(Args...)>
+{
+	typedef volatile ClassType& owner_type;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct function_traits<ReturnType(ClassType::*)(Args...) const volatile>
+: public function_traits<ReturnType(Args...)>
+{
+	typedef const volatile ClassType& owner_type;
+};
+
+template <typename FunctionType>
+struct function_traits<std::function<FunctionType>>
+: public function_traits<FunctionType>
+{};
+	
+} // namespace detail
+
+template<typename CallbackFn>
+void Listener::setProfileAddedCallback( CallbackFn callback )
+{
+	typedef typename detail::function_traits<decltype(callback)>::template arg<0>::type traits;
+	typedef typename std::decay<traits>::type TuioType;
+	
+	static_assert(std::is_same<tuio::Cursor2D, TuioType>::value ||
+				  std::is_same<tuio::Cursor25D, TuioType>::value ||
+				  std::is_same<tuio::Cursor3D, TuioType>::value ||
+				  std::is_same<tuio::Object2D, TuioType>::value ||
+				  std::is_same<tuio::Object25D, TuioType>::value ||
+				  std::is_same<tuio::Object3D, TuioType>::value ||
+				  std::is_same<tuio::Blob2D, TuioType>::value ||
+				  std::is_same<tuio::Blob25D, TuioType>::value ||
+				  std::is_same<tuio::Blob3D, TuioType>::value ||
+				  std::is_same<ci::app::TouchEvent, TuioType>::value, "Not a supported Callback");
+	static_assert(detail::function_traits<decltype(callback)>::arity == 1, "");
+	
+	auto address = getOscAddressFromType<TuioType>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		auto profile = dynamic_cast<detail::ProfileHandler<TuioType>*>(found->second.get());
+		profile->setAddHandler( callback );
+	}
+	else {
+		// TODO: Add listener to osc here
+		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
+		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
+		created->setAddHandler( callback );
+		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+												   created, std::placeholders::_1 ) );
+	}
+}
+
+
+template<typename CallbackFn>
+void Listener::setProfileUpdatedCallback( CallbackFn callback )
+{
+	typedef typename detail::function_traits<decltype(callback)>::template arg<0>::type traits;
+	typedef typename std::decay<traits>::type TuioType;
+	
+	static_assert(std::is_same<tuio::Cursor2D, TuioType>::value ||
+				  std::is_same<tuio::Cursor25D, TuioType>::value ||
+				  std::is_same<tuio::Cursor3D, TuioType>::value ||
+				  std::is_same<tuio::Object2D, TuioType>::value ||
+				  std::is_same<tuio::Object25D, TuioType>::value ||
+				  std::is_same<tuio::Object3D, TuioType>::value ||
+				  std::is_same<tuio::Blob2D, TuioType>::value ||
+				  std::is_same<tuio::Blob25D, TuioType>::value ||
+				  std::is_same<tuio::Blob3D, TuioType>::value ||
+				  std::is_same<ci::app::TouchEvent, TuioType>::value, "Not a supported Callback");
+	static_assert(detail::function_traits<decltype(callback)>::arity == 1, "");
+	
+	auto address = getOscAddressFromType<TuioType>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		auto profile = dynamic_cast<detail::ProfileHandler<TuioType>*>(found->second.get());
+		profile->setUpdateHandler( callback );
+	}
+	else {
+		// TODO: Add listener to osc here
+		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
+		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
+		created->setUpdateHandler( callback );
+		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+												   created, std::placeholders::_1 ) );
+	}
+}
+
+template<typename CallbackFn>
+void Listener::setProfileRemovedCallback( CallbackFn callback )
+{
+	typedef typename detail::function_traits<decltype(callback)>::template arg<0>::type traits;
+	typedef typename std::decay<traits>::type TuioType;
+	
+	static_assert(std::is_same<tuio::Cursor2D, TuioType>::value ||
+				  std::is_same<tuio::Cursor25D, TuioType>::value ||
+				  std::is_same<tuio::Cursor3D, TuioType>::value ||
+				  std::is_same<tuio::Object2D, TuioType>::value ||
+				  std::is_same<tuio::Object25D, TuioType>::value ||
+				  std::is_same<tuio::Object3D, TuioType>::value ||
+				  std::is_same<tuio::Blob2D, TuioType>::value ||
+				  std::is_same<tuio::Blob25D, TuioType>::value ||
+				  std::is_same<tuio::Blob3D, TuioType>::value ||
+				  std::is_same<ci::app::TouchEvent, TuioType>::value, "Not a supported Callback");
+	static_assert(detail::function_traits<decltype(callback)>::arity == 1, "");
+	
+	auto address = getOscAddressFromType<TuioType>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		auto profile = dynamic_cast<detail::ProfileHandler<TuioType>*>(found->second.get());
+		profile->setRemoveHandler( callback );
+		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+												   profile.get(), std::placeholders::_1 ) );
+	}
+	else {
+		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
+		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
+		created->setRemoveHandler( callback );
+		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+												   created, std::placeholders::_1 ) );
+	}
+}
+
+template<typename T>
+const char* Listener::getOscAddressFromType()
+{
+	if( std::is_same<T, Cursor2D>::value ) return "/tuio/2Dcur";
+	else if( std::is_same<T, Cursor25D>::value ) return "/tuio/25Dcur";
+	else if( std::is_same<T, Cursor3D>::value ) return "/tuio/3Dcur";
+	else if( std::is_same<T, Object2D>::value ) return "/tuio/2Dobj";
+	else if( std::is_same<T, Object25D>::value ) return "/tuio/25Dobj";
+	else if( std::is_same<T, Object3D>::value ) return "/tuio/3Dobj";
+	else if( std::is_same<T, Blob2D>::value ) return "/tuio/2Dblb";
+	else if( std::is_same<T, Blob25D>::value ) return "/tuio/25Dblb";
+	else if( std::is_same<T, Blob3D>::value ) return "/tuio/3Dblb";
+	// TODO: decide if this is good. Probably not but let's see
+	else if( std::is_same<T, cinder::app::TouchEvent>::value ) return "/tuio/2Dcur";
+	else return "Unknown Target";
+}
+	
+namespace detail {
+	
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::setAddHandler( ProfileFn<CallbackType> callback )
+{
+	std::lock_guard<std::mutex> lock( mAddMutex );
+	mAddCallback = callback;
+}
+
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::setUpdateHandler( ProfileFn<CallbackType> callback )
+{
+	std::lock_guard<std::mutex> lock( mUpdateMutex );
+	mUpdateCallback = callback;
+}
+
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::setRemoveHandler( ProfileFn<CallbackType> callback )
+{
+	std::lock_guard<std::mutex> lock( mRemoveMutex );
+	mRemoveCallback = callback;
+}
+
+template<typename CallbackType, typename ProfileType>
+void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &message )
+{
+	auto messageType = message[0].string();
+	
+	if( messageType == "source" ) {
+		mCurrentSource = message[1].string();
+	}
+	else if( messageType == "set" ) {
+		auto sessionId = message[1].int32();
+		auto it = find_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
+						  [sessionId]( const ProfileType &profile){
+							  return sessionId == profile.getSessionId();
+						  });
+		if( it == mSetOfCurrentTouches.end() ) {
+			ProfileType profile( message );
+			
+			auto insert = lower_bound( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ), profile.getSessionId(),
+									  []( const ProfileType &lhs, int32_t value ){
+										  return lhs.getSessionId() < value;
+									  });
+			mSetOfCurrentTouches.insert( insert, std::move( message ) );
+			mSetOfCurrentTouches.back().setSource( mCurrentSource );
+			mAdded.push_back( sessionId );
+		}
+		else {
+			*it = std::move( ProfileType( message ) );
+			it->setSource( mCurrentSource );
+			mUpdated.push_back( sessionId );
+		}
+	}
+	else if( messageType == "alive" ) {
+		std::vector<int32_t> aliveIds( message.getNumArgs() - 1 );
+		int i = 1;
+		for( auto & aliveId : aliveIds ) {
+			aliveId = message[i++].int32();
+		}
+		std::sort( aliveIds.begin(), aliveIds.end() );
+		auto remove = remove_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
+								[&aliveIds]( const ProfileType &profile ) {
+									return binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
+								});
+		// TODO: Fix this.
+//		mRemovedTouches.resize( std::distance( remove, mSetOfCurrentTouches.end() ) );
+		std::move( remove, mSetOfCurrentTouches.end(), mRemovedTouches.begin() );
+	}
+	else if( messageType == "fseq" ) {
+		auto frame = message[1].int32();
+		int32_t prev_frame = mSourceFrameNums[mCurrentSource];
+		int32_t delta_frame = frame - prev_frame;
+		// TODO: figure out about past frame threshold updating, this was also in the if condition ( dframe < -mPastFrameThreshold )
+		if( frame == -1 || delta_frame > 0 ) {
+			auto begin = mSetOfCurrentTouches.cbegin();
+			auto end = mSetOfCurrentTouches.cend();
+			if( ! mAdded.empty() ) {
+				std::lock_guard<std::mutex> lock( mAddMutex );
+				if( mAddCallback ) {
+					for( auto & added : mAdded ) {
+						auto found = find_if( begin, end,
+						[added]( const ProfileType &profile ) {
+							 return added == profile.getSessionId();
+						});
+						if( found != end )
+							mAddCallback( *found );
+					}
+				}
+			}
+			if ( ! mUpdated.empty() ) {
+				std::lock_guard<std::mutex> lock( mUpdateMutex );
+				if( mUpdateCallback ) {
+					for( auto & updated : mUpdated ) {
+						auto found = find_if( begin, end,
+						[updated]( const ProfileType &profile ) {
+							 return updated == profile.getSessionId();
+						});
+						if( found != end )
+							mUpdateCallback( *found );
+					}
+				}
+			}
+			if( ! mRemovedTouches.empty() ){
+				std::lock_guard<std::mutex> lock( mRemoveMutex );
+				if( mRemoveCallback )
+					for( auto & removed : mRemovedTouches ) {
+						mRemoveCallback( removed );
+					}
+			}
+			
+			//			mPreviousFrame[source] = ( frame == -1 ) ? mPreviousFrame[source] : frame;
+		}
+	}
+}
+}
+} } // namespace tuio // namespace cinder
