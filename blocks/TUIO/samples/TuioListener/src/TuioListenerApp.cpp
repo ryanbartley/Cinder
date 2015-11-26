@@ -43,7 +43,9 @@ class TuioClientApp : public App {
 //	void draw25d( tuio::Cursor25D cursor );
 	void draw();
 	
-	void add( tuio::Cursor2D cursor ) {}
+	void added( const tuio::Cursor2D &cursor );
+	void updated( const tuio::Cursor2D &cursor );
+	void removed( const tuio::Cursor2D &cursor );
 	
 	std::shared_ptr<tuio::Listener> tuio;
 };
@@ -54,17 +56,24 @@ void TuioClientApp::setup()
 	tuio->bind();
 	tuio->listen();
 	
-	std::function<void( const tuio::Cursor2D & )> bound = std::bind( &TuioClientApp::add, this, std::placeholders::_1 );
-	
-	tuio->setAdded<tuio::Cursor2D>( bound );
-//	tuio.setProfileUpdatedCallback<tuio::Cursor2D>(
-//	[&]( const tuio::Cursor2D &cursor ) {
-//		console() << "Cursor updated " << cursor.getSessionId() << std::endl;
-//	});
-//	tuio.setProfileRemovedCallback<tuio::Cursor2D>(
-//	[&]( const tuio::Cursor2D &cursor ) {
-//		console() << "Cursor removed " << cursor.getSessionId() << std::endl;
-//	});
+	tuio->setAdded<tuio::Cursor2D>( std::bind( &TuioClientApp::added, this, std::placeholders::_1 ) );
+	tuio->setUpdated<tuio::Cursor2D>( std::bind( &TuioClientApp::updated, this, std::placeholders::_1 ) );
+	tuio->setRemoved<tuio::Cursor2D>( std::bind( &TuioClientApp::removed, this, std::placeholders::_1 ) );
+}
+
+void TuioClientApp::added( const tuio::Cursor2D &cursor )
+{
+	cout << "added: " << cursor.getSessionId() << endl;
+}
+
+void TuioClientApp::updated( const tuio::Cursor2D &cursor )
+{
+	cout << "updated: " << cursor.getSessionId() << endl;
+}
+
+void TuioClientApp::removed( const tuio::Cursor2D &cursor )
+{
+	cout << "removed: " << cursor.getSessionId() << endl;
 }
 
 //void TuioClientApp::draw2d( tuio::Cursor2D cursor, int sourcenum )
@@ -95,7 +104,7 @@ void TuioClientApp::setup()
 
 void TuioClientApp::draw()
 {
-//		gl::clear( Color( 0, 0, 0 ) );
+		gl::clear( Color( 0, 0, 0 ) );
 //			
 //		// Draw a center dot in all the cursors, to test the ability
 //		// of tuio.getCursors() to get all cursors in one vector.

@@ -254,16 +254,14 @@ struct ProfileHandler : public ProfileHandlerBase {
 	
 	std::vector<ProfileType> getCurrentActiveProfiles();
 	
-	std::string								mCurrentSource;
-	std::vector<int32_t>					mAdded, mUpdated;
-	std::vector<ProfileType>				mSetOfCurrentTouches,
-	mNextFrameTouches,
-	mRemovedTouches;
-	std::set<int32_t>						mCurrentAliveIds;
-	std::map<std::string, int32_t>			mSourceFrameNums;
+	std::string						mCurrentSource;
+	std::vector<int32_t>			mAdded, mUpdated;
+	std::vector<ProfileType>		mSetOfCurrentTouches,
+									mRemovedTouches;
+	std::map<std::string, int32_t>	mSourceFrameNums;
 	// containers for changes which will be propagated upon receipt of 'fseq'
-	ProfileFn<CallbackType>		mAddCallback, mUpdateCallback, mRemoveCallback;
-	std::mutex					mAddMutex, mUpdateMutex, mRemoveMutex;
+	ProfileFn<CallbackType>			mAddCallback, mUpdateCallback, mRemoveCallback;
+	std::mutex						mAddMutex, mUpdateMutex, mRemoveMutex;
 };
 
 template<>
@@ -278,16 +276,14 @@ struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase
 	
 	std::vector<Cursor2D> getCurrentActiveProfiles();
 	
-	std::string								mCurrentSource;
-	std::vector<int32_t>					mAdded, mUpdated;
-	std::vector<Cursor2D>					mSetOfCurrentTouches,
-	mNextFrameTouches,
-	mRemovedTouches;
-	std::set<int32_t>						mCurrentAliveIds;
-	std::map<std::string, int32_t>			mSourceFrameNums;
+	std::string						mCurrentSource;
+	std::vector<int32_t>			mAdded, mUpdated;
+	std::vector<Cursor2D>			mSetOfCurrentTouches,
+									mRemovedTouches;
+	std::map<std::string, int32_t>	mSourceFrameNums;
 	// containers for changes which will be propagated upon receipt of 'fseq'
-	ProfileFn<ci::app::TouchEvent>			mAddCallback, mUpdateCallback, mRemoveCallback;
-	std::mutex								mAddMutex, mUpdateMutex, mRemoveMutex;
+	ProfileFn<ci::app::TouchEvent>	mAddCallback, mUpdateCallback, mRemoveCallback;
+	std::mutex						mAddMutex, mUpdateMutex, mRemoveMutex;
 };
 	
 } // namespace detail
@@ -337,8 +333,6 @@ void Listener::setRemoved( ProfileFn<TuioType> callback )
 	if( found != mHandlers.end() ) {
 		auto profile = dynamic_cast<detail::ProfileHandler<TuioType>*>(found->second.get());
 		profile->setRemoveHandler( callback );
-		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
-												   profile.get(), std::placeholders::_1 ) );
 	}
 	else {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
@@ -469,6 +463,7 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 							mAddCallback( *found );
 					}
 				}
+				mAdded.clear();
 			}
 			if ( ! mUpdated.empty() ) {
 				std::lock_guard<std::mutex> lock( mUpdateMutex );
@@ -482,6 +477,7 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 							mUpdateCallback( *found );
 					}
 				}
+				mUpdated.clear();
 			}
 			if( ! mRemovedTouches.empty() ){
 				std::lock_guard<std::mutex> lock( mRemoveMutex );
@@ -491,8 +487,7 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 					}
 				mRemovedTouches.clear();
 			}
-			
-			//			mPreviousFrame[source] = ( frame == -1 ) ? mPreviousFrame[source] : frame;
+			mSourceFrameNums[mCurrentSource] = ( frame == -1 ) ? mSourceFrameNums[mCurrentSource] : frame;
 		}
 	}
 }
