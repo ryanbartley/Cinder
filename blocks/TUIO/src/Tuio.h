@@ -65,8 +65,8 @@ using Blob3D = detail::Blob3D;
 //! Implements a Receiver for the TUIO 1.1 protocol, described here: http://www.tuio.org/?specification
 class Receiver {
 public:
-	template<typename Profile>
-	using ProfileFn = std::function<void(const Profile&)>;
+	template<typename Type>
+	using TypeFn = std::function<void(const Type&)>;
 	
 	Receiver( const app::WindowRef &window,
 		    uint16_t localPort = DEFAULT_TUIO_PORT,
@@ -80,21 +80,21 @@ public:
 	
 	//! Registers an async callback which fires when a new cursor is added
 	template<typename TuioType>
-	void	setAdded( ProfileFn<TuioType> callback );
+	void	setAdded( TypeFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is updated
 	template<typename TuioType>
-	void	setUpdated( ProfileFn<TuioType> callback );
+	void	setUpdated( TypeFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is removed
 	template<typename TuioType>
-	void	setRemoved( ProfileFn<TuioType> callback );
+	void	setRemoved( TypeFn<TuioType> callback );
 	
 	//! Removes Receivers for TuioType
 	template<typename TuioType>
 	void	remove();
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
-	template<typename ProfileType>
-	std::vector<ProfileType> getActiveProfiles( const std::string &source = "" ) const;
+	template<typename TuioType>
+	std::vector<TuioType> getActive( const std::string &source = "" ) const;
 	
 	//! Returns the threshold for a frame ID being old enough to imply a new source
 	int32_t	getPastFrameThreshold() const;
@@ -118,28 +118,28 @@ private:
 	
 namespace detail {
 	
-class Profile {
+class Type {
 public:
 	int32_t getSessionId() const { return mSessionId; }
 	const std::string& getSource() const { return mSource; }
 	void setSource( const std::string &source ) { mSource = source; }
-	bool operator<( const Profile &other );
+	bool operator<( const Type &other );
 	
 protected:
-	Profile( const osc::Message &msg );
-	Profile() {}
-	Profile( const Profile &other ) = default;
-	Profile( Profile &&other ) NOEXCEPT;
-	Profile& operator=( const Profile &other ) = default;
-	Profile& operator=( Profile &&other ) NOEXCEPT;
-	~Profile() = default;
+	Type( const osc::Message &msg );
+	Type() {}
+	Type( const Type &other ) = default;
+	Type( Type &&other ) NOEXCEPT;
+	Type& operator=( const Type &other ) = default;
+	Type& operator=( Type &&other ) NOEXCEPT;
+	~Type() = default;
 	
 	int32_t		mSessionId;
 	std::string mSource;
 };
 
 template<typename VEC_T>
-class Cursor : public Profile {
+class Cursor : public Type {
 public:
 	Cursor( const osc::Message &msg );
 	
@@ -162,7 +162,7 @@ protected:
 };
 
 template<typename VEC_T, typename ROT_T>
-class Object : public Profile {
+class Object : public Type {
 public:
 	Object( const osc::Message &msg );
 	
@@ -187,10 +187,10 @@ protected:
 };
 
 template<typename VEC_T, typename ROT_T, typename DIM_T>
-class Blob : public Profile {
+class Blob : public Type {
 public:
 	Blob( const osc::Message &msg );
-	Blob() : Profile() {}
+	Blob() : Type() {}
 	Blob( const Blob &other ) = default;
 	Blob( Blob &&other ) NOEXCEPT;
 	Blob& operator=( const Blob &other ) = default;

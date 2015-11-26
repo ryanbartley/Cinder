@@ -19,25 +19,25 @@ namespace cinder { namespace  tuio {
 namespace detail {
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
-///// Profile
+///// Type
 	
-bool Profile::operator<(const Profile & other)
+bool Type::operator<(const Type & other)
 {
 	return mSource < other.mSource &&
 		mSessionId < other.mSessionId;
 }
 
-Profile::Profile( const osc::Message &msg )
+Type::Type( const osc::Message &msg )
 : mSessionId( msg[1].int32() )
 {
 }
 
-Profile::Profile( Profile &&other ) NOEXCEPT
+Type::Type( Type &&other ) NOEXCEPT
 : mSessionId( other.mSessionId ), mSource( std::move( other.mSource ) )
 {
 }
 
-Profile& Profile::operator=( Profile &&other ) NOEXCEPT
+Type& Type::operator=( Type &&other ) NOEXCEPT
 {
 	if ( this != &other ) {
 		mSessionId = other.mSessionId;
@@ -54,21 +54,21 @@ template class Cursor<vec3>;
 
 template<>
 Cursor<vec2>::Cursor( const osc::Message &msg )
-: Profile( msg ), mPosition( msg[2].flt(), msg[3].flt() ),
+: Type( msg ), mPosition( msg[2].flt(), msg[3].flt() ),
 	mVelocity( msg[4].flt(), msg[5].flt() ), mAcceleration( msg[6].flt() )
 {
 }
 	
 template<>
 Cursor<vec3>::Cursor( const osc::Message &msg )
-: Profile( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
+: Type( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
 mVelocity( msg[5].flt(), msg[6].flt(), msg[7].flt() ), mAcceleration( msg[8].flt() )
 {
 }
 
 template<typename VEC_T>
 Cursor<VEC_T>::Cursor( Cursor<VEC_T> &&other ) NOEXCEPT
-: Profile( other ), mPosition( std::move( other.mPosition ) ), 
+: Type( other ), mPosition( std::move( other.mPosition ) ), 
 	mVelocity( std::move( other.mVelocity ) ), mAcceleration( other.mAcceleration )
 {
 }
@@ -77,7 +77,7 @@ template<typename VEC_T>
 Cursor<VEC_T>& Cursor<VEC_T>::operator=( Cursor<VEC_T> &&other ) NOEXCEPT
 {
 	if( this != &other ) {
-		Profile::operator=( other );
+		Type::operator=( other );
 		mPosition = std::move( other.mPosition );
 		mVelocity = std::move( other.mVelocity );
 		mAcceleration = other.mAcceleration;
@@ -105,7 +105,7 @@ template class Object<ci::vec3, ci::vec3>;
 	
 template<>
 Object<ci::vec2, float>::Object( const osc::Message &msg )
-: Profile( msg ), mClassId( msg[2].int32() ), mPosition( msg[3].flt(), msg[4].flt() ),
+: Type( msg ), mClassId( msg[2].int32() ), mPosition( msg[3].flt(), msg[4].flt() ),
 	mAngle( msg[5].flt() ), mVelocity( msg[6].flt(), msg[7].flt() ),
 	mRotationVelocity( msg[8].flt() ), mAcceleration( msg[9].flt() ),
 	mRotateAccel( msg[10].flt() )
@@ -114,7 +114,7 @@ Object<ci::vec2, float>::Object( const osc::Message &msg )
 	
 template<>
 Object<ci::vec3, float>::Object( const osc::Message &msg )
-: Profile( msg ), mClassId( msg[2].int32() ),
+: Type( msg ), mClassId( msg[2].int32() ),
 	mPosition( msg[3].flt(), msg[4].flt(), msg[5].flt() ),
 	mAngle( msg[6].flt() ), mVelocity( msg[7].flt(), msg[8].flt(), msg[9].flt() ),
 	mRotationVelocity( msg[10].flt() ), mAcceleration( msg[11].flt() ),
@@ -124,7 +124,7 @@ Object<ci::vec3, float>::Object( const osc::Message &msg )
 	
 template<>
 Object<ci::vec3, ci::vec3>::Object( const osc::Message &msg )
-: Profile( msg ), mClassId( msg[2].int32() ),
+: Type( msg ), mClassId( msg[2].int32() ),
 	mPosition(	msg[3].flt(), msg[4].flt(), msg[5].flt() ),
 	mAngle(		msg[6].flt(), msg[7].flt(), msg[8].flt() ),
 	mVelocity(	msg[9].flt(), msg[10].flt(), msg[11].flt() ),
@@ -135,7 +135,7 @@ Object<ci::vec3, ci::vec3>::Object( const osc::Message &msg )
 
 template<typename VEC_T, typename ROT_T>
 Object<VEC_T, ROT_T>::Object( Object<VEC_T, ROT_T> &&other ) NOEXCEPT
-: Profile( other ), mClassId( other.mClassId ), mPosition( std::move( other.mPosition ) ),
+: Type( other ), mClassId( other.mClassId ), mPosition( std::move( other.mPosition ) ),
 	mVelocity( std::move( other.mVelocity ) ), mAngle( std::move( other.mAngle ) ),
 	mRotationVelocity( std::move( other.mRotationVelocity ) ), mAcceleration( other.mAcceleration ),
 	mRotateAccel( other.mRotateAccel )
@@ -146,7 +146,7 @@ template<typename VEC_T, typename ROT_T>
 Object<VEC_T, ROT_T>& Object<VEC_T, ROT_T>::operator=( Object<VEC_T, ROT_T> &&other ) NOEXCEPT
 {
 	if( this != &other ) {
-		Profile::operator=( other );
+		Type::operator=( other );
 		mClassId = other.mClassId;
 		mPosition = std::move( other.mPosition );
 		mVelocity = std::move( other.mVelocity );
@@ -163,7 +163,7 @@ Object<VEC_T, ROT_T>& Object<VEC_T, ROT_T>::operator=( Object<VEC_T, ROT_T> &&ot
 	
 template<>
 Blob<ci::vec2, float, ci::vec2>::Blob( const osc::Message &msg )
-: Profile( msg ), mPosition( msg[2].flt(), msg[3].flt() ), mAngle( msg[4].flt() ),
+: Type( msg ), mPosition( msg[2].flt(), msg[3].flt() ), mAngle( msg[4].flt() ),
 	mDimensions( msg[5].flt(), msg[6].flt() ), mGeometry( msg[7].flt() ),
 	mVelocity( msg[8].flt(), msg[9].flt() ), mRotationVelocity( msg[10].flt() ),
 	mAcceleration( msg[11].flt() ), mRotateAccel( msg[12].flt() )
@@ -172,7 +172,7 @@ Blob<ci::vec2, float, ci::vec2>::Blob( const osc::Message &msg )
 	
 template<>
 Blob<ci::vec3, float, ci::vec2>::Blob( const osc::Message &msg )
-: Profile( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
+: Type( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
 	mAngle( msg[5].flt() ), mDimensions( msg[6].flt(), msg[7].flt() ),
 	mGeometry( msg[8].flt() ), mVelocity( msg[9].flt(), msg[10].flt(), msg[11].flt() ),
 	mRotationVelocity( msg[12].flt() ), mAcceleration( msg[13].flt() ),
@@ -182,7 +182,7 @@ Blob<ci::vec3, float, ci::vec2>::Blob( const osc::Message &msg )
 	
 template<>
 Blob<ci::vec3, ci::vec3, ci::vec3>::Blob( const osc::Message &msg )
-: Profile( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
+: Type( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
 	mAngle( msg[5].flt(), msg[6].flt(), msg[7].flt() ),
 	mDimensions( msg[8].flt(), msg[9].flt(), msg[10].flt() ),
 	mGeometry( msg[11].flt() ), mVelocity( msg[12].flt(), msg[13].flt(), msg[14].flt() ),
@@ -193,7 +193,7 @@ Blob<ci::vec3, ci::vec3, ci::vec3>::Blob( const osc::Message &msg )
 
 template<typename VEC_T, typename ROT_T, typename DIM_T>
 Blob<VEC_T, ROT_T, DIM_T>::Blob( Blob<VEC_T, ROT_T, DIM_T> &&other ) NOEXCEPT
-: Profile( other ), mPosition( std::move( other.mPosition ) ),
+: Type( other ), mPosition( std::move( other.mPosition ) ),
 	mVelocity( std::move( other.mVelocity ) ), mAngle( std::move( other.mAngle ) ),
 	mRotationVelocity( std::move( other.mRotationVelocity ) ), 
 	mDimensions( std::move( other.mDimensions ) ), mAcceleration( other.mAcceleration ),
@@ -205,7 +205,7 @@ template<typename VEC_T, typename ROT_T, typename DIM_T>
 Blob<VEC_T, ROT_T, DIM_T>& Blob<VEC_T, ROT_T, DIM_T>::operator=( Blob<VEC_T, ROT_T, DIM_T> &&other ) NOEXCEPT
 {
 	if( this != &other ) {
-		Profile::operator=( other );
+		Type::operator=( other );
 		mPosition = std::move( other.mPosition );
 		mVelocity = std::move( other.mVelocity );
 		mAngle = std::move( other.mAngle );
@@ -245,31 +245,31 @@ Blob3D::Blob3D( const osc::Message &msg )
 }
 
 template<typename T>
-using ProfileFn = Receiver::ProfileFn<T>;
+using TypeFn = Receiver::TypeFn<T>;
 
-template<typename CallbackType, typename ProfileType = CallbackType>
+template<typename CallbackType, typename TuioType = CallbackType>
 class TypeHandler : public TypeHandlerBase {
 public:
 	//! TODO: Need to figure out about "PastFrameThreshold", got rid of it.
 	TypeHandler() {}
 	
-	void setAddHandler( ProfileFn<CallbackType> callback );
-	void setUpdateHandler( ProfileFn<CallbackType> callback );
-	void setRemoveHandler( ProfileFn<CallbackType> callback );
+	void setAddHandler( TypeFn<CallbackType> callback );
+	void setUpdateHandler( TypeFn<CallbackType> callback );
+	void setRemoveHandler( TypeFn<CallbackType> callback );
 	void handleMessage( const osc::Message &message ) override;
 	void handleAdds( std::vector<int32_t> &deleteIds );
 	void handleUpdates();
 	void handleRemoves();
 	
-	std::vector<ProfileType> getCurrentActiveProfiles();
+	std::vector<TuioType> getCurrentActive();
 	
 	std::string						mCurrentSource;
 	std::vector<int32_t>			mAdded, mUpdated;
-	std::vector<ProfileType>		mSetOfCurrentTouches,
+	std::vector<TuioType>			mSetOfCurrentTouches,
 									mRemovedTouches;
 	std::map<std::string, int32_t>	mSourceFrameNums;
 	// containers for changes which will be propagated upon receipt of 'fseq'
-	ProfileFn<CallbackType>			mAddCallback, mUpdateCallback, mRemoveCallback;
+	TypeFn<CallbackType>			mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex						mAddMutex, mUpdateMutex, mRemoveMutex;
 };
 
@@ -279,12 +279,12 @@ public:
 	//! TODO: Need to figure out about "PastFrameThreshold", got rid of it.
 	TypeHandler() {}
 	
-	void setAddHandler( ProfileFn<ci::app::TouchEvent> callback );
-	void setUpdateHandler( ProfileFn<ci::app::TouchEvent> callback );
-	void setRemoveHandler( ProfileFn<ci::app::TouchEvent> callback );
+	void setAddHandler( TypeFn<ci::app::TouchEvent> callback );
+	void setUpdateHandler( TypeFn<ci::app::TouchEvent> callback );
+	void setRemoveHandler( TypeFn<ci::app::TouchEvent> callback );
 	void handleMessage( const osc::Message &message ) override;
 	
-	std::vector<Cursor2D> getCurrentActiveProfiles( const std::string &source );
+	std::vector<Cursor2D> getCurrentActive( const std::string &source );
 	
 	std::string						mCurrentSource;
 	std::vector<int32_t>			mAdded, mUpdated;
@@ -292,33 +292,33 @@ public:
 									mRemovedTouches;
 	std::map<std::string, int32_t>	mSourceFrameNums;
 	// containers for changes which will be propagated upon receipt of 'fseq'
-	ProfileFn<ci::app::TouchEvent>	mAddCallback, mUpdateCallback, mRemoveCallback;
+	TypeFn<ci::app::TouchEvent>	mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex						mAddMutex, mUpdateMutex, mRemoveMutex;
 };
 	
-template<typename CallbackType, typename ProfileType>
-void TypeHandler<CallbackType, ProfileType>::setAddHandler( ProfileFn<CallbackType> callback )
+template<typename CallbackType, typename TuioType>
+void TypeHandler<CallbackType, TuioType>::setAddHandler( TypeFn<CallbackType> callback )
 {
 	std::lock_guard<std::mutex> lock( mAddMutex );
 	mAddCallback = callback;
 }
 
-template<typename CallbackType, typename ProfileType>
-void TypeHandler<CallbackType, ProfileType>::setUpdateHandler( ProfileFn<CallbackType> callback )
+template<typename CallbackType, typename TuioType>
+void TypeHandler<CallbackType, TuioType>::setUpdateHandler( TypeFn<CallbackType> callback )
 {
 	std::lock_guard<std::mutex> lock( mUpdateMutex );
 	mUpdateCallback = callback;
 }
 
-template<typename CallbackType, typename ProfileType>
-void TypeHandler<CallbackType, ProfileType>::setRemoveHandler( ProfileFn<CallbackType> callback )
+template<typename CallbackType, typename TuioType>
+void TypeHandler<CallbackType, TuioType>::setRemoveHandler( TypeFn<CallbackType> callback )
 {
 	std::lock_guard<std::mutex> lock( mRemoveMutex );
 	mRemoveCallback = callback;
 }
 
-template<typename CallbackType, typename ProfileType>
-void TypeHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &message )
+template<typename CallbackType, typename TuioType>
+void TypeHandler<CallbackType, TuioType>::handleMessage( const osc::Message &message )
 {
 	auto messageType = message[0].string();
 	
@@ -329,23 +329,23 @@ void TypeHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &
 	else if( messageType == "set" ) {
 		auto sessionId = message[1].int32();
 		auto it = find_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
-						  [sessionId]( const ProfileType &profile){
-							  return sessionId == profile.getSessionId();
+						  [sessionId]( const TuioType &type){
+							  return sessionId == type.getSessionId();
 						  });
 		if( it == mSetOfCurrentTouches.end() ) {
-			ProfileType profile( message );
+			TuioType type( message );
 			auto insert = lower_bound( begin( mSetOfCurrentTouches ),
 									  end( mSetOfCurrentTouches ),
-									  profile.getSessionId(),
-									  []( const ProfileType &lhs, int32_t value ){
-										  return lhs.getSessionId() < value;
-									  });
+									  type.getSessionId(),
+			[]( const TuioType &lhs, int32_t value ){
+				  return lhs.getSessionId() < value;
+			});
 			mSetOfCurrentTouches.insert( insert, std::move( message ) );
 			mSetOfCurrentTouches.back().setSource( mCurrentSource );
 			mAdded.push_back( sessionId );
 		}
 		else {
-			*it = std::move( ProfileType( message ) );
+			*it = std::move( TuioType( message ) );
 			it->setSource( mCurrentSource );
 			mUpdated.push_back( sessionId );
 		}
@@ -358,9 +358,9 @@ void TypeHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &
 		}
 		std::sort( aliveIds.begin(), aliveIds.end() );
 		auto remove = remove_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
-								[&aliveIds]( const ProfileType &profile ) {
-									return !binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
-								});
+		[&aliveIds]( const TuioType &type ) {
+			return !binary_search( begin(aliveIds), end(aliveIds), type.getSessionId() );
+		});
 		if( remove != mSetOfCurrentTouches.end() ) {
 			std::move( remove, mSetOfCurrentTouches.end(), std::back_inserter( mRemovedTouches ) );
 			mSetOfCurrentTouches.erase( remove, mSetOfCurrentTouches.end() );
@@ -379,9 +379,9 @@ void TypeHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &
 				if( mAddCallback ) {
 					for( auto & added : mAdded ) {
 						auto found = find_if( begin, end,
-											 [added]( const ProfileType &profile ) {
-												 return added == profile.getSessionId();
-											 });
+						[added]( const TuioType &type ) {
+							 return added == type.getSessionId();
+						});
 						if( found != end )
 							mAddCallback( *found );
 					}
@@ -393,8 +393,8 @@ void TypeHandler<CallbackType, ProfileType>::handleMessage( const osc::Message &
 				if( mUpdateCallback ) {
 					for( auto & updated : mUpdated ) {
 						auto found = find_if( begin, end,
-											 [updated]( const ProfileType &profile ) {
-												 return updated == profile.getSessionId();
+											 [updated]( const TuioType &type ) {
+												 return updated == type.getSessionId();
 											 });
 						if( found != end )
 							mUpdateCallback( *found );
@@ -448,13 +448,13 @@ void Receiver::close()
 }
 	
 template<typename TuioType>
-void Receiver::setAdded( ProfileFn<TuioType> callback )
+void Receiver::setAdded( TypeFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<detail::TypeHandler<TuioType>*>(found->second.get());
-		profile->setAddHandler( callback );
+		auto typeHandler = dynamic_cast<detail::TypeHandler<TuioType>*>(found->second.get());
+		typeHandler->setAddHandler( callback );
 	}
 	else {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::TypeHandler<TuioType>>( new detail::TypeHandler<TuioType>() ) );
@@ -467,13 +467,13 @@ void Receiver::setAdded( ProfileFn<TuioType> callback )
 
 
 template<typename TuioType>
-void Receiver::setUpdated( ProfileFn<TuioType> callback )
+void Receiver::setUpdated( TypeFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<detail::TypeHandler<TuioType>*>(found->second.get());
-		profile->setUpdateHandler( callback );
+		auto typeHandler = dynamic_cast<detail::TypeHandler<TuioType>*>(found->second.get());
+		typeHandler->setUpdateHandler( callback );
 	}
 	else {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::TypeHandler<TuioType>>( new detail::TypeHandler<TuioType>() ) );
@@ -485,13 +485,13 @@ void Receiver::setUpdated( ProfileFn<TuioType> callback )
 }
 
 template<typename TuioType>
-void Receiver::setRemoved( ProfileFn<TuioType> callback )
+void Receiver::setRemoved( TypeFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<detail::TypeHandler<TuioType>*>(found->second.get());
-		profile->setRemoveHandler( callback );
+		auto typeHandler = dynamic_cast<detail::TypeHandler<TuioType>*>(found->second.get());
+		typeHandler->setRemoveHandler( callback );
 	}
 	else {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::TypeHandler<TuioType>>( new detail::TypeHandler<TuioType>() ) );
@@ -530,28 +530,28 @@ const char* Receiver::getOscAddressFromType()
 	else return "Unknown Target";
 }
 
-template<typename ProfileType>
-vector<ProfileType> Receiver::getActiveProfiles( const std::string &source ) const
+template<typename TuioType>
+vector<TuioType> Receiver::getActive( const std::string &source ) const
 {
-	auto found = mHandlers.find( getOscAddressFromType<ProfileType>() );
+	auto found = mHandlers.find( getOscAddressFromType<TuioType>() );
 	if( found != mHandlers.end() ) {
-		return found->second->getCurrentActiveProfiles( source );
+		return found->second->getCurrentActive( source );
 	}
 	else {
-		return std::vector<ProfileType>();
+		return std::vector<TuioType>();
 	}
 }
 
 
 	
 template<>
-void Receiver::setAdded( ProfileFn<TouchEvent> callback )
+void Receiver::setAdded( TypeFn<TouchEvent> callback )
 {
 	auto address = getOscAddressFromType<TouchEvent>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<detail::TypeHandler<TouchEvent, Cursor2D>*>(found->second.get());
-		profile->setAddHandler( callback );
+		auto typeHandler = dynamic_cast<detail::TypeHandler<TouchEvent, Cursor2D>*>(found->second.get());
+		typeHandler->setAddHandler( callback );
 	}
 	else {
 		// TODO: Add Receiver to osc here
@@ -563,13 +563,13 @@ void Receiver::setAdded( ProfileFn<TouchEvent> callback )
 
 	
 template<>
-void Receiver::setUpdated( ProfileFn<TouchEvent> callback )
+void Receiver::setUpdated( TypeFn<TouchEvent> callback )
 {
 	auto address = getOscAddressFromType<TouchEvent>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<detail::TypeHandler<TouchEvent, Cursor2D>*>(found->second.get());
-		profile->setAddHandler( callback );
+		auto typeHandler = dynamic_cast<detail::TypeHandler<TouchEvent, Cursor2D>*>(found->second.get());
+		typeHandler->setAddHandler( callback );
 	}
 	else {
 		// TODO: Add Receiver to osc here
@@ -580,13 +580,13 @@ void Receiver::setUpdated( ProfileFn<TouchEvent> callback )
 }
 
 template<>
-void Receiver::setRemoved( ProfileFn<TouchEvent> callback )
+void Receiver::setRemoved( TypeFn<TouchEvent> callback )
 {
 	auto address = getOscAddressFromType<TouchEvent>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		auto profile = dynamic_cast<detail::TypeHandler<TouchEvent, Cursor2D>*>(found->second.get());
-		profile->setAddHandler( callback );
+		auto typeHandler = dynamic_cast<detail::TypeHandler<TouchEvent, Cursor2D>*>(found->second.get());
+		typeHandler->setAddHandler( callback );
 	}
 	else {
 		// TODO: Add Receiver to osc here
@@ -607,21 +607,21 @@ namespace detail {
 
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
-///// TypeHandler specialized (callback - TouchEvent, profile - Cursor2D)
+///// TypeHandler specialized (callback - TouchEvent, type - Cursor2D)
 	
-void TypeHandler<TouchEvent, Cursor2D>::setAddHandler( ProfileFn<TouchEvent> callback )
+void TypeHandler<TouchEvent, Cursor2D>::setAddHandler( TypeFn<TouchEvent> callback )
 {
 	std::lock_guard<std::mutex> lock( mAddMutex );
 	mAddCallback = callback;
 }
 	
-void TypeHandler<TouchEvent, Cursor2D>::setUpdateHandler( ProfileFn<TouchEvent> callback )
+void TypeHandler<TouchEvent, Cursor2D>::setUpdateHandler( TypeFn<TouchEvent> callback )
 {
 	std::lock_guard<std::mutex> lock( mUpdateMutex );
 	mUpdateCallback = callback;
 }
 
-void TypeHandler<TouchEvent, Cursor2D>::setRemoveHandler( ProfileFn<TouchEvent> callback )
+void TypeHandler<TouchEvent, Cursor2D>::setRemoveHandler( TypeFn<TouchEvent> callback )
 {
 	std::lock_guard<std::mutex> lock( mRemoveMutex );
 	mRemoveCallback = callback;
@@ -637,13 +637,13 @@ void TypeHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &messa
 	else if( messageType == "set" ) {
 		auto sessionId = message[1].int32();
 		auto it = find_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
-		[sessionId]( const Cursor2D &profile){
-			return sessionId == profile.getSessionId();
+		[sessionId]( const Cursor2D &type){
+			return sessionId == type.getSessionId();
 		});
 		if( it == mSetOfCurrentTouches.end() ) {
-			Cursor2D profile( message );
+			Cursor2D type( message );
 			// TODO: this lambda is wrong.
-			auto insert = lower_bound( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ), profile.getSessionId(),
+			auto insert = lower_bound( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ), type.getSessionId(),
 			[]( const Cursor2D &lhs, const int val ){
 				return lhs.getSessionId() < val;
 			});
@@ -665,8 +665,8 @@ void TypeHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &messa
 		}
 		std::sort( aliveIds.begin(), aliveIds.end() );
 		auto remove = remove_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
-		[&aliveIds]( const Cursor2D &profile ) {
-			return binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
+		[&aliveIds]( const Cursor2D &type ) {
+			return binary_search( begin(aliveIds), end(aliveIds), type.getSessionId() );
 		});
 		std::move( remove, mSetOfCurrentTouches.end(),
 				  std::inserter( mRemovedTouches, mRemovedTouches.begin() ) );
@@ -685,8 +685,8 @@ void TypeHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &messa
 					std::vector<TouchEvent::Touch> mAddTouches;
 					for( auto & added : mAdded ) {
 						auto found = find_if( begin, end,
-						[added]( const Cursor2D &profile ){
-							 return added == profile.getSessionId();
+						[added]( const Cursor2D &type ){
+							 return added == type.getSessionId();
 						});
 						if( found != end )
 							mAddTouches.emplace_back( found->convertToTouch() );
@@ -700,8 +700,8 @@ void TypeHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &messa
 					std::vector<TouchEvent::Touch> mUpdateTouches;
 					for( auto & updated : mUpdated ) {
 						auto found = find_if( begin, end,
-						[updated]( const Cursor2D &profile ){
-							 return updated == profile.getSessionId();
+						[updated]( const Cursor2D &type ){
+							 return updated == type.getSessionId();
 						});
 						if( found != end )
 							mUpdateTouches.emplace_back( found->convertToTouch() );
@@ -727,49 +727,49 @@ void TypeHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &messa
 		
 } // namespace detail
 
-template void Receiver::setAdded( ProfileFn<tuio::detail::Cursor<ci::vec2>> );
-template void Receiver::setRemoved( ProfileFn<tuio::detail::Cursor<ci::vec2>> );
-template void Receiver::setUpdated( ProfileFn<tuio::detail::Cursor<ci::vec2>> );
+template void Receiver::setAdded( TypeFn<tuio::detail::Cursor<ci::vec2>> );
+template void Receiver::setRemoved( TypeFn<tuio::detail::Cursor<ci::vec2>> );
+template void Receiver::setUpdated( TypeFn<tuio::detail::Cursor<ci::vec2>> );
 template void Receiver::remove<tuio::detail::Cursor<ci::vec2>>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::detail::Cursor<ci::vec3>> );
-template void Receiver::setRemoved( ProfileFn<tuio::detail::Cursor<ci::vec3>> );
-template void Receiver::setUpdated( ProfileFn<tuio::detail::Cursor<ci::vec3>> );
+template void Receiver::setAdded( TypeFn<tuio::detail::Cursor<ci::vec3>> );
+template void Receiver::setRemoved( TypeFn<tuio::detail::Cursor<ci::vec3>> );
+template void Receiver::setUpdated( TypeFn<tuio::detail::Cursor<ci::vec3>> );
 template void Receiver::remove<tuio::detail::Cursor<ci::vec3>>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::Object2D> );
-template void Receiver::setRemoved( ProfileFn<tuio::Object2D> );
-template void Receiver::setUpdated( ProfileFn<tuio::Object2D> );
+template void Receiver::setAdded( TypeFn<tuio::Object2D> );
+template void Receiver::setRemoved( TypeFn<tuio::Object2D> );
+template void Receiver::setUpdated( TypeFn<tuio::Object2D> );
 template void Receiver::remove<tuio::Object2D>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::Object25D> );
-template void Receiver::setRemoved( ProfileFn<tuio::Object25D> );
-template void Receiver::setUpdated( ProfileFn<tuio::Object25D> );
+template void Receiver::setAdded( TypeFn<tuio::Object25D> );
+template void Receiver::setRemoved( TypeFn<tuio::Object25D> );
+template void Receiver::setUpdated( TypeFn<tuio::Object25D> );
 template void Receiver::remove<tuio::Object25D>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::Object3D> );
-template void Receiver::setRemoved( ProfileFn<tuio::Object3D> );
-template void Receiver::setUpdated( ProfileFn<tuio::Object3D> );
+template void Receiver::setAdded( TypeFn<tuio::Object3D> );
+template void Receiver::setRemoved( TypeFn<tuio::Object3D> );
+template void Receiver::setUpdated( TypeFn<tuio::Object3D> );
 template void Receiver::remove<tuio::Object3D>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::Blob2D> );
-template void Receiver::setRemoved( ProfileFn<tuio::Blob2D> );
-template void Receiver::setUpdated( ProfileFn<tuio::Blob2D> );
+template void Receiver::setAdded( TypeFn<tuio::Blob2D> );
+template void Receiver::setRemoved( TypeFn<tuio::Blob2D> );
+template void Receiver::setUpdated( TypeFn<tuio::Blob2D> );
 template void Receiver::remove<tuio::Blob2D>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::Blob25D> );
-template void Receiver::setRemoved( ProfileFn<tuio::Blob25D> );
-template void Receiver::setUpdated( ProfileFn<tuio::Blob25D> );
+template void Receiver::setAdded( TypeFn<tuio::Blob25D> );
+template void Receiver::setRemoved( TypeFn<tuio::Blob25D> );
+template void Receiver::setUpdated( TypeFn<tuio::Blob25D> );
 template void Receiver::remove<tuio::Blob25D>();
 	
-template void Receiver::setAdded( ProfileFn<tuio::Blob3D> );
-template void Receiver::setRemoved( ProfileFn<tuio::Blob3D> );
-template void Receiver::setUpdated( ProfileFn<tuio::Blob3D> );
+template void Receiver::setAdded( TypeFn<tuio::Blob3D> );
+template void Receiver::setRemoved( TypeFn<tuio::Blob3D> );
+template void Receiver::setUpdated( TypeFn<tuio::Blob3D> );
 template void Receiver::remove<tuio::Blob3D>();
 	
-template void Receiver::setAdded( ProfileFn<ci::app::TouchEvent> );
-template void Receiver::setRemoved( ProfileFn<ci::app::TouchEvent> );
-template void Receiver::setUpdated( ProfileFn<ci::app::TouchEvent> );
+template void Receiver::setAdded( TypeFn<ci::app::TouchEvent> );
+template void Receiver::setRemoved( TypeFn<ci::app::TouchEvent> );
+template void Receiver::setUpdated( TypeFn<ci::app::TouchEvent> );
 template void Receiver::remove<ci::app::TouchEvent>();
 
 }}  // namespace tuio // namespace cinder
