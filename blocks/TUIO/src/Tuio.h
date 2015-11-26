@@ -34,14 +34,9 @@
 namespace cinder { namespace tuio {
 
 namespace detail {
-template<typename VEC_T>
-class Cursor;
-
-template<typename VEC_T, typename ROT_T>
-class Object;
-
-template<typename VEC_T, typename ROT_T, typename DIM_T>
-class Blob;
+template<typename VEC_T> class Cursor;
+template<typename VEC_T, typename ROT_T> class Object;
+template<typename VEC_T, typename ROT_T, typename DIM_T> class Blob;
 	
 class Blob2D;
 class Blob25D;
@@ -52,10 +47,9 @@ public:
 	virtual ~ProfileHandlerBase() = default;
 	virtual void handleMessage( const osc::Message &message ) = 0;
 };
-	
 }
 
-using Cursor2D	= detail::Cursor<ci::vec2>;
+using Cursor2D = detail::Cursor<ci::vec2>;
 using Cursor25D = detail::Cursor<ci::vec3>;
 using Cursor3D	= detail::Cursor<ci::vec3>;
 	
@@ -121,5 +115,103 @@ private:
 	ProfileHandlers						mHandlers;
 	app::WindowRef						mWindow;
 };
+	
+namespace detail {
+	
+class Profile {
+public:
+	int32_t getSessionId() const { return mSessionId; }
+	const std::string& getSource() const { return mSource; }
+	void setSource( const std::string &source ) { mSource = source; }
+	bool operator<( const Profile &other );
+	
+protected:
+	Profile( const osc::Message &msg );
+	Profile( const Profile &other ) = default;
+	Profile( Profile &&other ) NOEXCEPT;
+	Profile& operator=( const Profile &other ) = default;
+	Profile& operator=( Profile &&other ) NOEXCEPT;
+	~Profile() = default;
+	
+	int32_t		mSessionId;
+	std::string mSource;
+};
+
+template<typename VEC_T>
+class Cursor : public Profile {
+public:
+	Cursor( const osc::Message &msg );
+	
+	Cursor( const Cursor &other ) = default;
+	Cursor( Cursor &&other ) NOEXCEPT;
+	Cursor& operator=( const Cursor &other ) = default;
+	Cursor& operator=( Cursor &&other ) NOEXCEPT;
+	~Cursor() = default;
+	
+	const VEC_T&	getPosition() const { return mPosition; }
+	const VEC_T&	getVelocity() const { return mVelocity; }
+	float			getAcceleration() const { return mAcceleration; }
+	
+	app::TouchEvent::Touch	convertToTouch() const;
+	
+protected:
+	VEC_T		mPosition,
+	mVelocity;
+	float		mAcceleration;
+};
+
+template<typename VEC_T, typename ROT_T>
+class Object : public Profile {
+public:
+	Object( const osc::Message &msg );
+	
+	Object( const Object &other ) = default;
+	Object( Object &&other ) NOEXCEPT;
+	Object& operator=( const Object &other ) = default;
+	Object& operator=( Object &&other ) NOEXCEPT;
+	~Object() = default;
+	
+	int32_t			getClassId() const { return mClassId; }
+	const VEC_T&	getPosition() const { return mPosition; }
+	const VEC_T&	getVelocity() const { return mVelocity; }
+	const ROT_T&	getAngle() const { return mAngle; }
+	const ROT_T&	getRotationVelocity() const { return mRotationVelocity; }
+	float			getAcceleration() const { return mAcceleration; }
+	float			getRotationAcceleration() const { return mRotateAccel; }
+protected:
+	int32_t		mClassId;
+	VEC_T		mPosition, mVelocity;
+	ROT_T		mAngle, mRotationVelocity;
+	float		mAcceleration, mRotateAccel;
+};
+
+template<typename VEC_T, typename ROT_T, typename DIM_T>
+class Blob : public Profile {
+public:
+	Blob( const osc::Message &msg );
+	
+	Blob( const Blob &other ) = default;
+	Blob( Blob &&other ) NOEXCEPT;
+	Blob& operator=( const Blob &other ) = default;
+	Blob& operator=( Blob &&other ) NOEXCEPT;
+	~Blob() = default;
+	
+	const VEC_T&	getPosition() const { return mPosition; }
+	const VEC_T&	getVelocity() const { return mVelocity; }
+	const ROT_T&	getAngle() const { return mAngle; }
+	const ROT_T&	getRotationVelocity() const { return mRotationVelocity; }
+	float			getAcceleration() const { return mAcceleration; }
+	float			getRotationAcceleration() const { return mRotateAccel; }
+	const DIM_T&	getDimension() { return mDimensions; }
+	
+protected:
+	VEC_T		mPosition, mVelocity;
+	ROT_T		mAngle, mRotationVelocity;
+	DIM_T		mDimensions;
+	float		mAcceleration, mRotateAccel;
+	float		mGeometry;
+};
+	
+}
 
 } } // namespace tuio // namespace cinder

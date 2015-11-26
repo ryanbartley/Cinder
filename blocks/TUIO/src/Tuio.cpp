@@ -21,25 +21,6 @@ namespace detail {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ///// Profile
 	
-class Profile {
-public:
-	int32_t getSessionId() const { return mSessionId; }
-	const std::string& getSource() const { return mSource; }
-	void setSource( const std::string &source ) { mSource = source; }
-	bool operator<( const Profile &other );
-	
-protected:
-	Profile( const osc::Message &msg );
-	Profile( const Profile &other ) = default;
-	Profile( Profile &&other ) NOEXCEPT;
-	Profile& operator=( const Profile &other ) = default;
-	Profile& operator=( Profile &&other ) NOEXCEPT;
-	~Profile() = default;
-	
-	int32_t		mSessionId;
-	std::string mSource;
-};
-	
 bool Profile::operator<(const Profile & other)
 {
 	return mSource < other.mSource &&
@@ -68,38 +49,18 @@ Profile& Profile::operator=( Profile &&other ) NOEXCEPT
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ///// Cursor
 	
-template<typename VEC_T>
-class Cursor : public Profile {
-public:
-	Cursor( const osc::Message &msg );
-	
-	Cursor( const Cursor &other ) = default;
-	Cursor( Cursor &&other ) NOEXCEPT;
-	Cursor& operator=( const Cursor &other ) = default;
-	Cursor& operator=( Cursor &&other ) NOEXCEPT;
-	~Cursor() = default;
-	
-	const VEC_T&	getPosition() const { return mPosition; }
-	const VEC_T&	getVelocity() const { return mVelocity; }
-	float			getAcceleration() const { return mAcceleration; }
-	
-	app::TouchEvent::Touch	convertToTouch() const;
-	
-protected:
-	VEC_T		mPosition,
-	mVelocity;
-	float		mAcceleration;
-};
+template class Cursor<vec2>;
+template class Cursor<vec3>;
 
 template<>
-Cursor<ci::vec2>::Cursor( const osc::Message &msg )
+Cursor<vec2>::Cursor( const osc::Message &msg )
 : Profile( msg ), mPosition( msg[2].flt(), msg[3].flt() ),
 	mVelocity( msg[4].flt(), msg[5].flt() ), mAcceleration( msg[6].flt() )
 {
 }
 	
 template<>
-Cursor<ci::vec3>::Cursor( const osc::Message &msg )
+Cursor<vec3>::Cursor( const osc::Message &msg )
 : Profile( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
 mVelocity( msg[5].flt(), msg[6].flt(), msg[7].flt() ), mAcceleration( msg[8].flt() )
 {
@@ -137,31 +98,6 @@ app::TouchEvent::Touch Cursor<T>::convertToTouch() const
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ///// Object
-	
-template<typename VEC_T, typename ROT_T>
-class Object : public Profile {
-public:
-	Object( const osc::Message &msg );
-	
-	Object( const Object &other ) = default;
-	Object( Object &&other ) NOEXCEPT;
-	Object& operator=( const Object &other ) = default;
-	Object& operator=( Object &&other ) NOEXCEPT;
-	~Object() = default;
-	
-	int32_t			getClassId() const { return mClassId; }
-	const VEC_T&	getPosition() const { return mPosition; }
-	const VEC_T&	getVelocity() const { return mVelocity; }
-	const ROT_T&	getAngle() const { return mAngle; }
-	const ROT_T&	getRotationVelocity() const { return mRotationVelocity; }
-	float			getAcceleration() const { return mAcceleration; }
-	float			getRotationAcceleration() const { return mRotateAccel; }
-protected:
-	int32_t		mClassId;
-	VEC_T		mPosition, mVelocity;
-	ROT_T		mAngle, mRotationVelocity;
-	float		mAcceleration, mRotateAccel;
-};
 	
 template<>
 Object<ci::vec2, float>::Object( const osc::Message &msg )
@@ -220,33 +156,6 @@ Object<VEC_T, ROT_T>& Object<VEC_T, ROT_T>::operator=( Object<VEC_T, ROT_T> &&ot
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ///// Blob
-
-template<typename VEC_T, typename ROT_T, typename DIM_T>
-class Blob : public Profile {
-public:
-	Blob( const osc::Message &msg );
-	
-	Blob( const Blob &other ) = default;
-	Blob( Blob &&other ) NOEXCEPT;
-	Blob& operator=( const Blob &other ) = default;
-	Blob& operator=( Blob &&other ) NOEXCEPT;
-	~Blob() = default;
-	
-	const VEC_T&	getPosition() const { return mPosition; }
-	const VEC_T&	getVelocity() const { return mVelocity; }
-	const ROT_T&	getAngle() const { return mAngle; }
-	const ROT_T&	getRotationVelocity() const { return mRotationVelocity; }
-	float			getAcceleration() const { return mAcceleration; }
-	float			getRotationAcceleration() const { return mRotateAccel; }
-	const DIM_T&	getDimension() { return mDimensions; }
-	
-protected:
-	VEC_T		mPosition, mVelocity;
-	ROT_T		mAngle, mRotationVelocity;
-	DIM_T		mDimensions;
-	float		mAcceleration, mRotateAccel;
-	float		mGeometry;
-};
 	
 template<>
 Blob<ci::vec2, float, ci::vec2>::Blob( const osc::Message &msg )
@@ -839,16 +748,11 @@ void ProfileHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &me
 		}
 	}
 }
-	
-	
 		
 } // namespace detail
 
-template void Listener::setAdded( ProfileFn<tuio::Cursor2D> );
-template void Listener::setRemoved( ProfileFn<tuio::Cursor2D> );
-template void Listener::setUpdated( ProfileFn<tuio::Cursor2D> );
-	
-template class detail::Cursor<vec2>;
-template class detail::Cursor<vec3>;
+	template void Listener::setAdded( ProfileFn<tuio::Cursor2D> );
+	template void Listener::setRemoved( ProfileFn<tuio::Cursor2D> );
+	template void Listener::setUpdated( ProfileFn<tuio::Cursor2D> );
 
 }}  // namespace tuio // namespace cinder
