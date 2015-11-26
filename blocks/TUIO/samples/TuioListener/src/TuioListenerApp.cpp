@@ -55,10 +55,10 @@ struct X {
 
 void TuioClientApp::setup()
 {
-
+	
 	tuio->listen();
 	
-	std::function<void( tuio::Cursor2D )> bound = std::bind( &add, std::placeholders::_1 );
+	std::function<void( const tuio::Cursor2D & )> bound = std::bind( &add, std::placeholders::_1 );
 	
 	tuio->setProfileAddedCallback( bound );
 //	tuio.setProfileUpdatedCallback<tuio::Cursor2D>(

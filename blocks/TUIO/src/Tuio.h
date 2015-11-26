@@ -80,14 +80,14 @@ public:
 	void close();
 	
 	//! Registers an async callback which fires when a new cursor is added
-	template<typename CallbackFn>
-	void	setProfileAddedCallback( CallbackFn callback );
+	template<typename TuioType>
+	void	setProfileAddedCallback( ProfileFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is updated
-	template<typename CallbackFn>
-	void	setProfileUpdatedCallback( CallbackFn callback );
+	template<typename TuioType>
+	void	setProfileUpdatedCallback( ProfileFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is removed
-	template<typename CallbackFn>
-	void	setProfileRemovedCallback( CallbackFn callback );
+	template<typename TuioType>
+	void	setProfileRemovedCallback( ProfileFn<TuioType> callback );
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
 	template<typename ProfileType>
@@ -285,107 +285,12 @@ struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase
 	ProfileFn<ci::app::TouchEvent>			mAddCallback, mUpdateCallback, mRemoveCallback;
 	std::mutex								mAddMutex, mUpdateMutex, mRemoveMutex;
 };
-
-// function_traits implemented by https://github.com/kennytm/utils/blob/master/traits.hpp	
-template <typename T>
-struct function_traits
-: public function_traits<decltype(&T::operator())>
-{};
-
-template <typename ReturnType, typename... Args>
-struct function_traits<ReturnType(Args...)>
-{
-	/**
-	 .. type:: type result_type
-	 
-	 The type returned by calling an instance of the function object type *F*.
-	 */
-	typedef ReturnType result_type;
-	
-	/**
-	 .. type:: type function_type
-	 
-	 The function type (``R(T...)``).
-	 */
-	typedef ReturnType function_type(Args...);
-	
-	/**
-	 .. data:: static const size_t arity
-	 
-	 Number of arguments the function object will take.
-	 */
-	enum { arity = sizeof...(Args) };
-	
-	/**
-	 .. type:: type arg<n>::type
-	 
-	 The type of the *n*-th argument.
-	 */
-	template <size_t i>
-	struct arg
-	{
-		typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
-	};
-};
-
-template <typename ReturnType, typename... Args>
-struct function_traits<ReturnType(*)(Args...)>
-: public function_traits<ReturnType(Args...)>
-{};
-
-template <typename ClassType, typename ReturnType, typename... Args>
-struct function_traits<ReturnType(ClassType::*)(Args...)>
-: public function_traits<ReturnType(Args...)>
-{
-	typedef ClassType& owner_type;
-};
-
-template <typename ClassType, typename ReturnType, typename... Args>
-struct function_traits<ReturnType(ClassType::*)(Args...) const>
-: public function_traits<ReturnType(Args...)>
-{
-	typedef const ClassType& owner_type;
-};
-
-template <typename ClassType, typename ReturnType, typename... Args>
-struct function_traits<ReturnType(ClassType::*)(Args...) volatile>
-: public function_traits<ReturnType(Args...)>
-{
-	typedef volatile ClassType& owner_type;
-};
-
-template <typename ClassType, typename ReturnType, typename... Args>
-struct function_traits<ReturnType(ClassType::*)(Args...) const volatile>
-: public function_traits<ReturnType(Args...)>
-{
-	typedef const volatile ClassType& owner_type;
-};
-
-template <typename FunctionType>
-struct function_traits<std::function<FunctionType>>
-: public function_traits<FunctionType>
-{};
 	
 } // namespace detail
 
-template<typename CallbackFn>
-void Listener::setProfileAddedCallback( CallbackFn callback )
+template<typename TuioType>
+void Listener::setProfileAddedCallback( ProfileFn<TuioType> callback )
 {
-	typedef typename detail::function_traits<decltype(callback)>::template arg<0>::type traits;
-	typedef typename std::decay<traits>::type TuioType;
-	
-	static_assert(std::is_same<tuio::Cursor2D, TuioType>::value ||
-				  std::is_same<tuio::Cursor25D, TuioType>::value ||
-				  std::is_same<tuio::Cursor3D, TuioType>::value ||
-				  std::is_same<tuio::Object2D, TuioType>::value ||
-				  std::is_same<tuio::Object25D, TuioType>::value ||
-				  std::is_same<tuio::Object3D, TuioType>::value ||
-				  std::is_same<tuio::Blob2D, TuioType>::value ||
-				  std::is_same<tuio::Blob25D, TuioType>::value ||
-				  std::is_same<tuio::Blob3D, TuioType>::value ||
-				  std::is_same<ci::app::TouchEvent, TuioType>::value, "Not a supported Callback");
-	static_assert(detail::function_traits<decltype(callback)>::arity == 1, "");
-	
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
@@ -393,7 +298,6 @@ void Listener::setProfileAddedCallback( CallbackFn callback )
 		profile->setAddHandler( callback );
 	}
 	else {
-		// TODO: Add listener to osc here
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
 		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
 		created->setAddHandler( callback );
@@ -403,24 +307,9 @@ void Listener::setProfileAddedCallback( CallbackFn callback )
 }
 
 
-template<typename CallbackFn>
-void Listener::setProfileUpdatedCallback( CallbackFn callback )
+template<typename TuioType>
+void Listener::setProfileUpdatedCallback( ProfileFn<TuioType> callback )
 {
-	typedef typename detail::function_traits<decltype(callback)>::template arg<0>::type traits;
-	typedef typename std::decay<traits>::type TuioType;
-	
-	static_assert(std::is_same<tuio::Cursor2D, TuioType>::value ||
-				  std::is_same<tuio::Cursor25D, TuioType>::value ||
-				  std::is_same<tuio::Cursor3D, TuioType>::value ||
-				  std::is_same<tuio::Object2D, TuioType>::value ||
-				  std::is_same<tuio::Object25D, TuioType>::value ||
-				  std::is_same<tuio::Object3D, TuioType>::value ||
-				  std::is_same<tuio::Blob2D, TuioType>::value ||
-				  std::is_same<tuio::Blob25D, TuioType>::value ||
-				  std::is_same<tuio::Blob3D, TuioType>::value ||
-				  std::is_same<ci::app::TouchEvent, TuioType>::value, "Not a supported Callback");
-	static_assert(detail::function_traits<decltype(callback)>::arity == 1, "");
-	
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
@@ -428,7 +317,6 @@ void Listener::setProfileUpdatedCallback( CallbackFn callback )
 		profile->setUpdateHandler( callback );
 	}
 	else {
-		// TODO: Add listener to osc here
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
 		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
 		created->setUpdateHandler( callback );
@@ -437,24 +325,9 @@ void Listener::setProfileUpdatedCallback( CallbackFn callback )
 	}
 }
 
-template<typename CallbackFn>
-void Listener::setProfileRemovedCallback( CallbackFn callback )
+template<typename TuioType>
+void Listener::setProfileRemovedCallback( ProfileFn<TuioType> callback )
 {
-	typedef typename detail::function_traits<decltype(callback)>::template arg<0>::type traits;
-	typedef typename std::decay<traits>::type TuioType;
-	
-	static_assert(std::is_same<tuio::Cursor2D, TuioType>::value ||
-				  std::is_same<tuio::Cursor25D, TuioType>::value ||
-				  std::is_same<tuio::Cursor3D, TuioType>::value ||
-				  std::is_same<tuio::Object2D, TuioType>::value ||
-				  std::is_same<tuio::Object25D, TuioType>::value ||
-				  std::is_same<tuio::Object3D, TuioType>::value ||
-				  std::is_same<tuio::Blob2D, TuioType>::value ||
-				  std::is_same<tuio::Blob25D, TuioType>::value ||
-				  std::is_same<tuio::Blob3D, TuioType>::value ||
-				  std::is_same<ci::app::TouchEvent, TuioType>::value, "Not a supported Callback");
-	static_assert(detail::function_traits<decltype(callback)>::arity == 1, "");
-	
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
