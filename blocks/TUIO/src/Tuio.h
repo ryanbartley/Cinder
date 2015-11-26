@@ -119,41 +119,34 @@ private:
 
 namespace detail {
 	
-struct Profile {
-	
+class Profile {
+public:
 	int32_t getSessionId() const { return mSessionId; }
 	const std::string& getSource() const { return mSource; }
 	void setSource( const std::string &source ) { mSource = source; }
+	bool operator<( const Profile &other );
 	
 protected:
 	Profile( const osc::Message &msg );
 	Profile( const Profile &other ) = default;
-	Profile( Profile &&other ) = default;
+	Profile( Profile &&other ) NOEXCEPT;
 	Profile& operator=( const Profile &other ) = default;
-	Profile& operator=( Profile &&other ) = default;
+	Profile& operator=( Profile &&other ) NOEXCEPT;
 	~Profile() = default;
 	
 	int32_t		mSessionId;
 	std::string mSource;
 };
 
-template<typename T>
-struct ProfileCompare {
-	bool operator()( const T& lhs, const T& rhs ) const
-	{
-		return lhs.getSource() < rhs.getSource() &&
-		lhs.getSessionId() < rhs.getSessionId();
-	}
-};
-
 template<typename VEC_T>
-struct Cursor : public Profile {
+class Cursor : public Profile {
+public:
 	Cursor( const osc::Message &msg );
 	
 	Cursor( const Cursor &other ) = default;
-	Cursor( Cursor &&other ) = default;
+	Cursor( Cursor &&other ) NOEXCEPT;
 	Cursor& operator=( const Cursor &other ) = default;
-	Cursor& operator=( Cursor &&other ) = default;
+	Cursor& operator=( Cursor &&other ) NOEXCEPT;
 	~Cursor() = default;
 	
 	const VEC_T&	getPosition() const { return mPosition; }
@@ -169,13 +162,14 @@ protected:
 };
 
 template<typename VEC_T, typename ROT_T>
-struct Object : public Profile {
+class Object : public Profile {
+public:
 	Object( const osc::Message &msg );
 	
 	Object( const Object &other ) = default;
-	Object( Object &&other ) = default;
+	Object( Object &&other ) NOEXCEPT;
 	Object& operator=( const Object &other ) = default;
-	Object& operator=( Object &&other ) = default;
+	Object& operator=( Object &&other ) NOEXCEPT;
 	~Object() = default;
 	
 	int32_t			getClassId() const { return mClassId; }
@@ -193,13 +187,14 @@ protected:
 };
 
 template<typename VEC_T, typename ROT_T, typename DIM_T>
-struct Blob : public Profile {
+class Blob : public Profile {
+public:
 	Blob( const osc::Message &msg );
 	
 	Blob( const Blob &other ) = default;
-	Blob( Blob &&other ) = default;
+	Blob( Blob &&other ) NOEXCEPT;
 	Blob& operator=( const Blob &other ) = default;
-	Blob& operator=( Blob &&other ) = default;
+	Blob& operator=( Blob &&other ) NOEXCEPT;
 	~Blob() = default;
 	
 	const VEC_T&	getPosition() const { return mPosition; }
@@ -218,20 +213,24 @@ protected:
 	float		mGeometry;
 };
 
-struct Blob2D : public detail::Blob<ci::vec2, float, ci::vec2> {
+class Blob2D : public detail::Blob<ci::vec2, float, ci::vec2> {
+public:
 	Blob2D( const osc::Message &msg );
 	float getArea() const { return mGeometry; }
 };
-struct Blob25D : public detail::Blob<ci::vec3, float, ci::vec2> {
+class Blob25D : public detail::Blob<ci::vec3, float, ci::vec2> {
+public:
 	Blob25D( const osc::Message &msg );
 	float getArea() const { return mGeometry; }
 };
-struct Blob3D : public detail::Blob<ci::vec3, ci::vec3, ci::vec3> {
+class Blob3D : public detail::Blob<ci::vec3, ci::vec3, ci::vec3> {
+public:
 	Blob3D( const osc::Message &msg );
 	float getVolume() const { return mGeometry; }
 };
 
-struct ProfileHandlerBase  {
+class ProfileHandlerBase  {
+public:
 	virtual ~ProfileHandlerBase() = default;
 	virtual void handleMessage( const osc::Message &message ) = 0;
 };
@@ -240,7 +239,8 @@ template<typename T>
 using ProfileFn = Listener::ProfileFn<T>;
 
 template<typename CallbackType, typename ProfileType = CallbackType>
-struct ProfileHandler : public ProfileHandlerBase {
+class ProfileHandler : public ProfileHandlerBase {
+public:
 	//! TODO: Need to figure out about "PastFrameThreshold", got rid of it.
 	ProfileHandler() {}
 	
@@ -265,7 +265,7 @@ struct ProfileHandler : public ProfileHandlerBase {
 };
 
 template<>
-struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase {
+class ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase {
 	//! TODO: Need to figure out about "PastFrameThreshold", got rid of it.
 	ProfileHandler() {}
 	

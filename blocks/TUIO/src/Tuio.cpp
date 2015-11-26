@@ -21,9 +21,29 @@ namespace detail {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ///// Profile
 	
+bool Profile::operator<(const Profile & other)
+{
+	return mSource < other.mSource &&
+		mSessionId < other.mSessionId;
+}
+
 Profile::Profile( const osc::Message &msg )
 : mSessionId( msg[1].int32() )
 {
+}
+
+Profile::Profile( Profile &&other ) NOEXCEPT
+: mSessionId( other.mSessionId ), mSource( std::move( other.mSource ) )
+{
+}
+
+Profile& Profile::operator=( Profile &&other ) NOEXCEPT
+{
+	if ( this != &other ) {
+		mSessionId = other.mSessionId;
+		mSource = std::move( other.mSource );
+	}
+	return *this;
 }
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +61,25 @@ Cursor<ci::vec3>::Cursor( const osc::Message &msg )
 : Profile( msg ), mPosition( msg[2].flt(), msg[3].flt(), msg[4].flt() ),
 mVelocity( msg[5].flt(), msg[6].flt(), msg[7].flt() ), mAcceleration( msg[8].flt() )
 {
+}
+
+template<typename VEC_T>
+Cursor<VEC_T>::Cursor( Cursor<VEC_T> &&other ) NOEXCEPT
+: Profile( other ), mPosition( std::move( other.mPosition ) ), 
+	mVelocity( std::move( other.mVelocity ) ), mAcceleration( other.mAcceleration )
+{
+}
+
+template<typename VEC_T>
+Cursor<VEC_T>& Cursor<VEC_T>::operator=( Cursor<VEC_T> &&other ) NOEXCEPT
+{
+	if( this != &other ) {
+		Profile::operator=( other );
+		mPosition = std::move( other.mPosition );
+		mVelocity = std::move( other.mVelocity );
+		mAcceleration = other.mAcceleration;
+	}
+	return *this;
 }
 	
 template<typename T>
@@ -86,6 +125,31 @@ Object<ci::vec3, ci::vec3>::Object( const osc::Message &msg )
 	mAcceleration( msg[15].flt() ), mRotateAccel( msg[16].flt() )
 {
 }
+
+template<typename VEC_T, typename ROT_T>
+Object<VEC_T, ROT_T>::Object( Object<VEC_T, ROT_T> &&other ) NOEXCEPT
+: Profile( other ), mClassId( other.mClassId ), mPosition( std::move( other.mPosition ) ),
+	mVelocity( std::move( other.mVelocity ) ), mAngle( std::move( other.mAngle ) ),
+	mRotationVelocity( std::move( other.mRotationVelocity ) ), mAcceleration( other.mAcceleration ),
+	mRotateAccel( other.mRotateAccel )
+{
+}
+
+template<typename VEC_T, typename ROT_T>
+Object<VEC_T, ROT_T>& Object<VEC_T, ROT_T>::operator=( Object<VEC_T, ROT_T> &&other ) NOEXCEPT
+{
+	if( this != &other ) {
+		Profile::operator=( other );
+		mClassId = other.mClassId;
+		mPosition = std::move( other.mPosition );
+		mVelocity = std::move( other.mVelocity );
+		mAngle = std::move( other.mAngle );
+		mRotationVelocity = std::move( other.mRotationVelocity );
+		mAcceleration = other.mAcceleration;
+		mRotateAccel = other.mRotateAccel;
+	}
+	return *this;
+}
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ///// Blob
@@ -118,6 +182,33 @@ Blob<ci::vec3, ci::vec3, ci::vec3>::Blob( const osc::Message &msg )
 	mRotationVelocity( msg[15].flt(), msg[16].flt(), msg[17].flt() ),
 	mAcceleration( msg[18].flt() ), mRotateAccel( msg[19].flt() )
 {
+}
+
+template<typename VEC_T, typename ROT_T, typename DIM_T>
+Blob<VEC_T, ROT_T, DIM_T>::Blob( Blob<VEC_T, ROT_T, DIM_T> &&other ) NOEXCEPT
+: Profile( other ), mPosition( std::move( other.mPosition ) ),
+	mVelocity( std::move( other.mVelocity ) ), mAngle( std::move( other.mAngle ) ),
+	mRotationVelocity( std::move( other.mRotationVelocity ) ), 
+	mDimensions( std::move( other.mDimensions ) ), mAcceleration( other.mAcceleration ),
+	mRotateAccel( other.mRotateAccel ), mGeometry( other.mGeometry )
+{
+}
+
+template<typename VEC_T, typename ROT_T, typename DIM_T>
+Blob<VEC_T, ROT_T, DIM_T>& Blob<VEC_T, ROT_T, DIM_T>::operator=( Blob<VEC_T, ROT_T, DIM_T> &&other ) NOEXCEPT
+{
+	if( this != &other ) {
+		Profile::operator=( other );
+		mPosition = std::move( other.mPosition );
+		mVelocity = std::move( other.mVelocity );
+		mAngle = std::move( other.mAngle );
+		mRotationVelocity = std::move( other.mRotationVelocity );
+		mDimensions = std::move( other.mDimensions );
+		mAcceleration = other.mAcceleration;
+		mRotateAccel = other.mRotateAccel;
+		mGeometry = other.mGeometry;
+	}
+	return *this;
 }
 	
 } // namespace detail
