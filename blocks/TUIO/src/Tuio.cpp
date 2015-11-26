@@ -13,7 +13,6 @@ using namespace ci;
 using namespace ci::app;
 using namespace asio;
 using namespace asio::ip;
-using Connection = boost::signals2::connection;
 
 namespace cinder { namespace  tuio {
 	
@@ -151,7 +150,7 @@ Blob3D::Blob3D( const osc::Message &msg )
 ///// Listener
 	
 Listener::Listener( const app::WindowRef &window,  uint16_t localPort, const asio::ip::udp &protocol, asio::io_service &io )
-	: mListener( new osc::ReceiverUdp( localPort, protocol, io ) ), mWindow( window )
+: mListener( new osc::ReceiverUdp( localPort, protocol, io ) ), mWindow( window )
 {
 	
 }

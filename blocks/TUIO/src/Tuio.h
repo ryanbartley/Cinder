@@ -28,8 +28,8 @@
 
 #include "cinder/Cinder.h"
 #include "cinder/app/App.h"
-#include "boost/signals2/signal.hpp"
 #include "Osc.h"
+#include "cinder/Log.h"
 
 namespace cinder { namespace tuio {
 
@@ -81,13 +81,17 @@ public:
 	
 	//! Registers an async callback which fires when a new cursor is added
 	template<typename TuioType>
-	void	setProfileAddedCallback( ProfileFn<TuioType> callback );
+	void	setAdded( ProfileFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is updated
 	template<typename TuioType>
-	void	setProfileUpdatedCallback( ProfileFn<TuioType> callback );
+	void	setUpdated( ProfileFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is removed
 	template<typename TuioType>
-	void	setProfileRemovedCallback( ProfileFn<TuioType> callback );
+	void	setRemoved( ProfileFn<TuioType> callback );
+	
+	//! Removes listeners for TuioType
+	template<typename TuioType>
+	void	remove();
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
 	template<typename ProfileType>
@@ -98,9 +102,9 @@ public:
 	//! Sets the threshold for a frame ID being old enough to imply a new source
 	void	setPastFrameThreshold( int32_t pastFrameThreshold );
 	
-	static const int DEFAULT_TUIO_PORT = 3333;
+	static const uint16_t DEFAULT_TUIO_PORT = 3333;
 	// default threshold for a frame ID being old enough to imply a new source
-	static const int32_t DEFAULT_PAST_FRAME_THRESHOLD = 10;
+	static const uint32_t DEFAULT_PAST_FRAME_THRESHOLD = 10;
 	
 private:
 	template<typename T>
@@ -160,7 +164,7 @@ struct Cursor : public Profile {
 	
 protected:
 	VEC_T		mPosition,
-	mVelocity;
+				mVelocity;
 	float		mAcceleration;
 };
 
@@ -289,7 +293,7 @@ struct ProfileHandler<ci::app::TouchEvent, Cursor2D> : public ProfileHandlerBase
 } // namespace detail
 
 template<typename TuioType>
-void Listener::setProfileAddedCallback( ProfileFn<TuioType> callback )
+void Listener::setAdded( ProfileFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
@@ -308,7 +312,7 @@ void Listener::setProfileAddedCallback( ProfileFn<TuioType> callback )
 
 
 template<typename TuioType>
-void Listener::setProfileUpdatedCallback( ProfileFn<TuioType> callback )
+void Listener::setUpdated( ProfileFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
@@ -326,7 +330,7 @@ void Listener::setProfileUpdatedCallback( ProfileFn<TuioType> callback )
 }
 
 template<typename TuioType>
-void Listener::setProfileRemovedCallback( ProfileFn<TuioType> callback )
+void Listener::setRemoved( ProfileFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
@@ -342,6 +346,17 @@ void Listener::setProfileRemovedCallback( ProfileFn<TuioType> callback )
 		created->setRemoveHandler( callback );
 		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
 												   created, std::placeholders::_1 ) );
+	}
+}
+	
+template<typename TuioType>
+void Listener::remove()
+{
+	auto address = getOscAddressFromType<TuioType>();
+	auto found = mHandlers.find( address );
+	if( found != mHandlers.end() ) {
+		mListener->removeListener( address );
+		mHandlers.erase( found );
 	}
 }
 
@@ -390,19 +405,21 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 {
 	auto messageType = message[0].string();
 	
+	using namespace std;
 	if( messageType == "source" ) {
 		mCurrentSource = message[1].string();
 	}
 	else if( messageType == "set" ) {
 		auto sessionId = message[1].int32();
 		auto it = find_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
-						  [sessionId]( const ProfileType &profile){
-							  return sessionId == profile.getSessionId();
-						  });
+		[sessionId]( const ProfileType &profile){
+			return sessionId == profile.getSessionId();
+		});
 		if( it == mSetOfCurrentTouches.end() ) {
 			ProfileType profile( message );
-			
-			auto insert = lower_bound( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ), profile.getSessionId(),
+			auto insert = lower_bound( begin( mSetOfCurrentTouches ),
+									  end( mSetOfCurrentTouches ),
+									  profile.getSessionId(),
 									  []( const ProfileType &lhs, int32_t value ){
 										  return lhs.getSessionId() < value;
 									  });
@@ -424,12 +441,13 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 		}
 		std::sort( aliveIds.begin(), aliveIds.end() );
 		auto remove = remove_if( begin( mSetOfCurrentTouches ), end( mSetOfCurrentTouches ),
-								[&aliveIds]( const ProfileType &profile ) {
-									return binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
-								});
-		// TODO: Fix this.
-//		mRemovedTouches.resize( std::distance( remove, mSetOfCurrentTouches.end() ) );
-		std::move( remove, mSetOfCurrentTouches.end(), mRemovedTouches.begin() );
+		[&aliveIds]( const ProfileType &profile ) {
+			return !binary_search( begin(aliveIds), end(aliveIds), profile.getSessionId() );
+		});
+		if( remove != mSetOfCurrentTouches.end() ) {
+			std::move( remove, mSetOfCurrentTouches.end(), std::back_inserter( mRemovedTouches ) );
+			mSetOfCurrentTouches.erase( remove, mSetOfCurrentTouches.end() );
+		}
 	}
 	else if( messageType == "fseq" ) {
 		auto frame = message[1].int32();
@@ -471,6 +489,7 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 					for( auto & removed : mRemovedTouches ) {
 						mRemoveCallback( removed );
 					}
+				mRemovedTouches.clear();
 			}
 			
 			//			mPreviousFrame[source] = ( frame == -1 ) ? mPreviousFrame[source] : frame;

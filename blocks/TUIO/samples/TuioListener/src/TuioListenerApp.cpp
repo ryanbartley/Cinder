@@ -32,35 +32,31 @@ using namespace ci::app;
 using namespace std;
 
 #include "Tuio.h"
-
-void add( tuio::Cursor2D cursor ) {}
+#include "cinder/Log.h"
 
 class TuioClientApp : public App {
   public:
 	void setup();
 
 //	void draw2d( tuio::Cursor2D cursor, int sourcenum );
-	void draw2d( tuio::Cursor2D cursor );
-	void draw25d( tuio::Cursor25D cursor );
+//	void draw2d( tuio::Cursor2D cursor );
+//	void draw25d( tuio::Cursor25D cursor );
 	void draw();
 	
-//	void add( tuio::Cursor2D cursor );
+	void add( tuio::Cursor2D cursor ) {}
 	
 	std::shared_ptr<tuio::Listener> tuio;
 };
 
-struct X {
-	void operator()( const tuio::Cursor2D &some ) {}
-};
-
 void TuioClientApp::setup()
 {
-	
+	tuio = std::shared_ptr<tuio::Listener>( new tuio::Listener( app::App::get()->getWindow() ) );
+	tuio->bind();
 	tuio->listen();
 	
-	std::function<void( const tuio::Cursor2D & )> bound = std::bind( &add, std::placeholders::_1 );
+	std::function<void( const tuio::Cursor2D & )> bound = std::bind( &TuioClientApp::add, this, std::placeholders::_1 );
 	
-	tuio->setProfileAddedCallback( bound );
+	tuio->setAdded<tuio::Cursor2D>( bound );
 //	tuio.setProfileUpdatedCallback<tuio::Cursor2D>(
 //	[&]( const tuio::Cursor2D &cursor ) {
 //		console() << "Cursor updated " << cursor.getSessionId() << std::endl;
@@ -84,18 +80,18 @@ void TuioClientApp::setup()
 //	gl::drawSolidCircle( cursor.getPosition() * vec2(getWindowSize()), 30 );
 //}
 
-void TuioClientApp::draw2d( tuio::Cursor2D cursor )
-{
-	gl::color( Color::white() );
-	gl::drawSolidCircle( cursor.getPosition() * vec2(getWindowSize()), 5.0f );
-}
-
-void TuioClientApp::draw25d( tuio::Cursor25D cursor )
-{
-	gl::color(ColorA(0.0f, 1.0f, 0.0f, 1.0f));
-	float radius = 75.0f * cursor.getPosition().z;
-	gl::drawSolidCircle( vec2(cursor.getPosition()) * vec2(getWindowSize()), radius );
-}
+//void TuioClientApp::draw2d( tuio::Cursor2D cursor )
+//{
+//	gl::color( Color::white() );
+//	gl::drawSolidCircle( cursor.getPosition() * vec2(getWindowSize()), 5.0f );
+//}
+//
+//void TuioClientApp::draw25d( tuio::Cursor25D cursor )
+//{
+//	gl::color(ColorA(0.0f, 1.0f, 0.0f, 1.0f));
+//	float radius = 75.0f * cursor.getPosition().z;
+//	gl::drawSolidCircle( vec2(cursor.getPosition()) * vec2(getWindowSize()), radius );
+//}
 
 void TuioClientApp::draw()
 {
