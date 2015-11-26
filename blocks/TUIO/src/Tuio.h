@@ -62,17 +62,17 @@ using Blob25D = detail::Blob25D;
 using Blob3D = detail::Blob3D;
 	
 
-//! Implements a Listener for the TUIO 1.1 protocol, described here: http://www.tuio.org/?specification
-class Listener {
+//! Implements a Receiver for the TUIO 1.1 protocol, described here: http://www.tuio.org/?specification
+class Receiver {
 public:
 	template<typename Profile>
 	using ProfileFn = std::function<void(const Profile&)>;
 	
-	Listener( const app::WindowRef &window,
+	Receiver( const app::WindowRef &window,
 		    uint16_t localPort = DEFAULT_TUIO_PORT,
 		    const asio::ip::udp &protocol = asio::ip::udp::v4(),
 		    asio::io_service &io = ci::app::App::get()->io_service() );
-	Listener( const osc::ReceiverBase *ptr );
+	Receiver( const osc::ReceiverBase *ptr );
 	
 	void bind();
 	void listen();
@@ -88,7 +88,7 @@ public:
 	template<typename TuioType>
 	void	setRemoved( ProfileFn<TuioType> callback );
 	
-	//! Removes listeners for TuioType
+	//! Removes Receivers for TuioType
 	template<typename TuioType>
 	void	remove();
 	
@@ -111,7 +111,7 @@ private:
 	
 	using ProfileHandlers = std::map<std::string, std::unique_ptr<detail::ProfileHandlerBase>>;
 	
-	std::unique_ptr<osc::ReceiverBase>	mListener;
+	std::unique_ptr<osc::ReceiverBase>	mReceiver;
 	ProfileHandlers						mHandlers;
 	app::WindowRef						mWindow;
 };
@@ -212,6 +212,6 @@ protected:
 	float		mGeometry;
 };
 	
-}
+} // namespace detail
 
 } } // namespace tuio // namespace cinder

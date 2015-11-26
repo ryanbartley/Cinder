@@ -1,6 +1,6 @@
 //
 //  Tuio.cpp
-//  TUIOListener
+//  TUIOReceiver
 //
 //  Created by ryan bartley on 11/5/15.
 //
@@ -255,7 +255,7 @@ Blob3D::Blob3D( const osc::Message &msg )
 }
 
 template<typename T>
-using ProfileFn = Listener::ProfileFn<T>;
+using ProfileFn = Receiver::ProfileFn<T>;
 
 template<typename CallbackType, typename ProfileType = CallbackType>
 class ProfileHandler : public ProfileHandlerBase {
@@ -428,36 +428,36 @@ void ProfileHandler<CallbackType, ProfileType>::handleMessage( const osc::Messag
 } // namespace detail
 	
 /////////////////////////////////////////////////////////////////////////////////////////////////
-///// Listener
+///// Receiver
 	
-Listener::Listener( const app::WindowRef &window,  uint16_t localPort, const asio::ip::udp &protocol, asio::io_service &io )
-: mListener( new osc::ReceiverUdp( localPort, protocol, io ) ), mWindow( window )
+Receiver::Receiver( const app::WindowRef &window,  uint16_t localPort, const asio::ip::udp &protocol, asio::io_service &io )
+: mReceiver( new osc::ReceiverUdp( localPort, protocol, io ) ), mWindow( window )
 {
 	
 }
 	
-Listener::Listener( const osc::ReceiverBase *ptr )
+Receiver::Receiver( const osc::ReceiverBase *ptr )
 {
 	
-}
-
-void Listener::bind()
-{
-	mListener->bind();
-}
-	
-void Listener::listen()
-{
-	mListener->listen();
 }
 
-void Listener::close()
+void Receiver::bind()
 {
-	mListener->close();
+	mReceiver->bind();
+}
+	
+void Receiver::listen()
+{
+	mReceiver->listen();
+}
+
+void Receiver::close()
+{
+	mReceiver->close();
 }
 	
 template<typename TuioType>
-void Listener::setAdded( ProfileFn<TuioType> callback )
+void Receiver::setAdded( ProfileFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
@@ -469,14 +469,14 @@ void Listener::setAdded( ProfileFn<TuioType> callback )
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
 		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
 		created->setAddHandler( callback );
-		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+		mReceiver->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
 												   created, std::placeholders::_1 ) );
 	}
 }
 
 
 template<typename TuioType>
-void Listener::setUpdated( ProfileFn<TuioType> callback )
+void Receiver::setUpdated( ProfileFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
@@ -488,13 +488,13 @@ void Listener::setUpdated( ProfileFn<TuioType> callback )
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
 		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
 		created->setUpdateHandler( callback );
-		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+		mReceiver->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
 												   created, std::placeholders::_1 ) );
 	}
 }
 
 template<typename TuioType>
-void Listener::setRemoved( ProfileFn<TuioType> callback )
+void Receiver::setRemoved( ProfileFn<TuioType> callback )
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
@@ -506,24 +506,24 @@ void Listener::setRemoved( ProfileFn<TuioType> callback )
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TuioType>>( new detail::ProfileHandler<TuioType>() ) );
 		auto created = dynamic_cast<detail::ProfileHandler<TuioType>*>(inserted.first->second.get());
 		created->setRemoveHandler( callback );
-		mListener->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
+		mReceiver->setListener( address, std::bind( &detail::ProfileHandlerBase::handleMessage,
 												   created, std::placeholders::_1 ) );
 	}
 }
 
 template<typename TuioType>
-void Listener::remove()
+void Receiver::remove()
 {
 	auto address = getOscAddressFromType<TuioType>();
 	auto found = mHandlers.find( address );
 	if( found != mHandlers.end() ) {
-		mListener->removeListener( address );
+		mReceiver->removeListener( address );
 		mHandlers.erase( found );
 	}
 }
 
 template<typename T>
-const char* Listener::getOscAddressFromType()
+const char* Receiver::getOscAddressFromType()
 {
 	if( std::is_same<T, Cursor2D>::value ) return "/tuio/2Dcur";
 	else if( std::is_same<T, Cursor25D>::value ) return "/tuio/25Dcur";
@@ -540,7 +540,7 @@ const char* Listener::getOscAddressFromType()
 }
 
 template<typename ProfileType>
-vector<ProfileType> Listener::getActiveProfiles() const
+vector<ProfileType> Receiver::getActiveProfiles() const
 {
 //	double currentTime = app::getElapsedSeconds();
 	vector<app::TouchEvent::Touch> result;
@@ -569,7 +569,7 @@ vector<ProfileType> Listener::getActiveProfiles() const
 
 	
 //template<>
-//void Listener::setProfileAddedCallback( ProfileFn<TouchEvent> callback )
+//void Receiver::setProfileAddedCallback( ProfileFn<TouchEvent> callback )
 //{
 //	auto address = getOscAddressFromType<TouchEvent>();
 //	auto found = mHandlers.find( address );
@@ -578,7 +578,7 @@ vector<ProfileType> Listener::getActiveProfiles() const
 //		profile->setAddHandler( callback );
 //	}
 //	else {
-//		// TODO: Add listener to osc here
+//		// TODO: Add Receiver to osc here
 //		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TouchEvent, Cursor2D>>( new detail::ProfileHandler<TouchEvent, Cursor2D>() ) );
 //		auto created = dynamic_cast<detail::ProfileHandler<TouchEvent, Cursor2D>*>(inserted.first->second.get());
 //		created->setAddHandler( callback );
@@ -587,7 +587,7 @@ vector<ProfileType> Listener::getActiveProfiles() const
 //
 //	
 //template<>
-//void Listener::setProfileUpdatedCallback( ProfileFn<TouchEvent> callback )
+//void Receiver::setProfileUpdatedCallback( ProfileFn<TouchEvent> callback )
 //{
 //	auto address = getOscAddressFromType<TouchEvent>();
 //	auto found = mHandlers.find( address );
@@ -596,7 +596,7 @@ vector<ProfileType> Listener::getActiveProfiles() const
 //		profile->setAddHandler( callback );
 //	}
 //	else {
-//		// TODO: Add listener to osc here
+//		// TODO: Add Receiver to osc here
 //		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TouchEvent, Cursor2D>>( new detail::ProfileHandler<TouchEvent, Cursor2D>() ) );
 //		auto created = dynamic_cast<detail::ProfileHandler<TouchEvent, Cursor2D>*>(inserted.first->second.get());
 //		created->setUpdateHandler( callback );
@@ -604,7 +604,7 @@ vector<ProfileType> Listener::getActiveProfiles() const
 //}
 //
 //template<>
-//void Listener::setProfileRemovedCallback( ProfileFn<TouchEvent> callback )
+//void Receiver::setProfileRemovedCallback( ProfileFn<TouchEvent> callback )
 //{
 //	auto address = getOscAddressFromType<TouchEvent>();
 //	auto found = mHandlers.find( address );
@@ -613,7 +613,7 @@ vector<ProfileType> Listener::getActiveProfiles() const
 //		profile->setAddHandler( callback );
 //	}
 //	else {
-//		// TODO: Add listener to osc here
+//		// TODO: Add Receiver to osc here
 //		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::ProfileHandler<TouchEvent, Cursor2D>>( new detail::ProfileHandler<TouchEvent, Cursor2D>() ) );
 //		auto created = dynamic_cast<detail::ProfileHandler<TouchEvent, Cursor2D>*>(inserted.first->second.get());
 //		created->setRemoveHandler( callback );
@@ -751,8 +751,8 @@ void ProfileHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &me
 		
 } // namespace detail
 
-	template void Listener::setAdded( ProfileFn<tuio::Cursor2D> );
-	template void Listener::setRemoved( ProfileFn<tuio::Cursor2D> );
-	template void Listener::setUpdated( ProfileFn<tuio::Cursor2D> );
+	template void Receiver::setAdded( ProfileFn<tuio::Cursor2D> );
+	template void Receiver::setRemoved( ProfileFn<tuio::Cursor2D> );
+	template void Receiver::setUpdated( ProfileFn<tuio::Cursor2D> );
 
 }}  // namespace tuio // namespace cinder
