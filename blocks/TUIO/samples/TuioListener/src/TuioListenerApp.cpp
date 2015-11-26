@@ -48,12 +48,12 @@ class TuioClientApp : public App {
 	void updated( const tuio::Cursor2D &cursor );
 	void removed( const tuio::Cursor2D &cursor );
 	
-	std::shared_ptr<tuio::Listener> tuio;
+	std::shared_ptr<tuio::Receiver> tuio;
 };
 
 void TuioClientApp::setup()
 {
-	tuio = std::shared_ptr<tuio::Listener>( new tuio::Listener( app::App::get()->getWindow() ) );
+	tuio = std::shared_ptr<tuio::Receiver>( new tuio::Receiver( app::App::get()->getWindow() ) );
 	tuio->bind();
 	tuio->listen();
 	

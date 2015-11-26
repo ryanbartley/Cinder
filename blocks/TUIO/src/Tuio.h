@@ -42,9 +42,9 @@ class Blob2D;
 class Blob25D;
 class Blob3D;
 	
-class ProfileHandlerBase  {
+class TypeHandlerBase  {
 public:
-	virtual ~ProfileHandlerBase() = default;
+	virtual ~TypeHandlerBase() = default;
 	virtual void handleMessage( const osc::Message &message ) = 0;
 };
 }
@@ -94,7 +94,7 @@ public:
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
 	template<typename ProfileType>
-	std::vector<ProfileType> getActiveProfiles() const;
+	std::vector<ProfileType> getActiveProfiles( const std::string &source = "" ) const;
 	
 	//! Returns the threshold for a frame ID being old enough to imply a new source
 	int32_t	getPastFrameThreshold() const;
@@ -109,10 +109,10 @@ private:
 	template<typename T>
 	static const char* getOscAddressFromType();
 	
-	using ProfileHandlers = std::map<std::string, std::unique_ptr<detail::ProfileHandlerBase>>;
+	using TypeHandlers = std::map<std::string, std::unique_ptr<detail::TypeHandlerBase>>;
 	
 	std::unique_ptr<osc::ReceiverBase>	mReceiver;
-	ProfileHandlers						mHandlers;
+	TypeHandlers						mHandlers;
 	app::WindowRef						mWindow;
 };
 	
@@ -127,6 +127,7 @@ public:
 	
 protected:
 	Profile( const osc::Message &msg );
+	Profile() {}
 	Profile( const Profile &other ) = default;
 	Profile( Profile &&other ) NOEXCEPT;
 	Profile& operator=( const Profile &other ) = default;
@@ -189,7 +190,7 @@ template<typename VEC_T, typename ROT_T, typename DIM_T>
 class Blob : public Profile {
 public:
 	Blob( const osc::Message &msg );
-	
+	Blob() : Profile() {}
 	Blob( const Blob &other ) = default;
 	Blob( Blob &&other ) NOEXCEPT;
 	Blob& operator=( const Blob &other ) = default;
@@ -210,6 +211,23 @@ protected:
 	DIM_T		mDimensions;
 	float		mAcceleration, mRotateAccel;
 	float		mGeometry;
+};
+	
+class Blob2D : public detail::Blob<ci::vec2, float, ci::vec2> {
+public:
+	Blob2D( const osc::Message &msg );
+	Blob2D() : Blob() {}
+	float getArea() const { return mGeometry; }
+};
+class Blob25D : public detail::Blob<ci::vec3, float, ci::vec2> {
+public:
+	Blob25D( const osc::Message &msg );
+	float getArea() const { return mGeometry; }
+};
+class Blob3D : public detail::Blob<ci::vec3, ci::vec3, ci::vec3> {
+public:
+	Blob3D( const osc::Message &msg );
+	float getVolume() const { return mGeometry; }
 };
 	
 } // namespace detail
