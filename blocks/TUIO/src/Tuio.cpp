@@ -730,29 +730,46 @@ void TypeHandler<TouchEvent, Cursor2D>::handleMessage( const osc::Message &messa
 template void Receiver::setAdded( ProfileFn<tuio::detail::Cursor<ci::vec2>> );
 template void Receiver::setRemoved( ProfileFn<tuio::detail::Cursor<ci::vec2>> );
 template void Receiver::setUpdated( ProfileFn<tuio::detail::Cursor<ci::vec2>> );
+template void Receiver::remove<tuio::detail::Cursor<ci::vec2>>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::detail::Cursor<ci::vec3>> );
 template void Receiver::setRemoved( ProfileFn<tuio::detail::Cursor<ci::vec3>> );
 template void Receiver::setUpdated( ProfileFn<tuio::detail::Cursor<ci::vec3>> );
+template void Receiver::remove<tuio::detail::Cursor<ci::vec3>>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::Object2D> );
 template void Receiver::setRemoved( ProfileFn<tuio::Object2D> );
 template void Receiver::setUpdated( ProfileFn<tuio::Object2D> );
+template void Receiver::remove<tuio::Object2D>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::Object25D> );
 template void Receiver::setRemoved( ProfileFn<tuio::Object25D> );
 template void Receiver::setUpdated( ProfileFn<tuio::Object25D> );
+template void Receiver::remove<tuio::Object25D>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::Object3D> );
 template void Receiver::setRemoved( ProfileFn<tuio::Object3D> );
 template void Receiver::setUpdated( ProfileFn<tuio::Object3D> );
+template void Receiver::remove<tuio::Object3D>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::Blob2D> );
 template void Receiver::setRemoved( ProfileFn<tuio::Blob2D> );
 template void Receiver::setUpdated( ProfileFn<tuio::Blob2D> );
+template void Receiver::remove<tuio::Blob2D>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::Blob25D> );
 template void Receiver::setRemoved( ProfileFn<tuio::Blob25D> );
 template void Receiver::setUpdated( ProfileFn<tuio::Blob25D> );
+template void Receiver::remove<tuio::Blob25D>();
+	
 template void Receiver::setAdded( ProfileFn<tuio::Blob3D> );
 template void Receiver::setRemoved( ProfileFn<tuio::Blob3D> );
 template void Receiver::setUpdated( ProfileFn<tuio::Blob3D> );
+template void Receiver::remove<tuio::Blob3D>();
+	
 template void Receiver::setAdded( ProfileFn<ci::app::TouchEvent> );
 template void Receiver::setRemoved( ProfileFn<ci::app::TouchEvent> );
 template void Receiver::setUpdated( ProfileFn<ci::app::TouchEvent> );
+template void Receiver::remove<ci::app::TouchEvent>();
 
 }}  // namespace tuio // namespace cinder
