@@ -61,36 +61,33 @@ using Blob2D = detail::Blob2D;
 using Blob25D = detail::Blob25D;
 using Blob3D = detail::Blob3D;
 	
-
 //! Implements a Receiver for the TUIO 1.1 protocol, described here: http://www.tuio.org/?specification
 class Receiver {
 public:
 	template<typename Type>
 	using TypeFn = std::function<void(const Type&)>;
+	using TypeHandlers = std::map<std::string, std::unique_ptr<detail::TypeHandlerBase>>;
 	
-	Receiver( const app::WindowRef &window,
-		    uint16_t localPort = DEFAULT_TUIO_PORT,
-		    const asio::ip::udp &protocol = asio::ip::udp::v4(),
-		    asio::io_service &io = ci::app::App::get()->io_service() );
+	Receiver( uint16_t localPort = DEFAULT_TUIO_PORT,
+		      const asio::ip::udp &protocol = asio::ip::udp::v4(),
+		      asio::io_service &io = ci::app::App::get()->io_service() );
 	Receiver( const osc::ReceiverBase *ptr );
-	
-	void bind();
-	void listen();
-	void close();
 	
 	//! Registers an async callback which fires when a new cursor is added
 	template<typename TuioType>
-	void	setAdded( TypeFn<TuioType> callback );
+	void	setAddedFn( TypeFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is updated
 	template<typename TuioType>
-	void	setUpdated( TypeFn<TuioType> callback );
+	void	setUpdatedFn( TypeFn<TuioType> callback );
 	//! Registers an async callback which fires when a cursor is removed
 	template<typename TuioType>
-	void	setRemoved( TypeFn<TuioType> callback );
+	void	setRemovedFn( TypeFn<TuioType> callback );
+	
+	void	setWindowReceiver( ci::app::WindowRef window );
 	
 	//! Removes Receivers for TuioType
 	template<typename TuioType>
-	void	remove();
+	void	clear();
 	
 	//! Returns a std::vector of all active touches, derived from \c 2Dcur (Cursor) messages
 	template<typename TuioType>
@@ -101,6 +98,8 @@ public:
 	//! Sets the threshold for a frame ID being old enough to imply a new source
 	void	setPastFrameThreshold( int32_t pastFrameThreshold );
 	
+	osc::ReceiverBase* getOscReceiver() const { return mReceiver.get(); }
+	
 	static const uint16_t DEFAULT_TUIO_PORT = 3333;
 	// default threshold for a frame ID being old enough to imply a new source
 	static const uint32_t DEFAULT_PAST_FRAME_THRESHOLD = 10;
@@ -109,29 +108,29 @@ private:
 	template<typename T>
 	static const char* getOscAddressFromType();
 	
-	using TypeHandlers = std::map<std::string, std::unique_ptr<detail::TypeHandlerBase>>;
-	
 	std::unique_ptr<osc::ReceiverBase>	mReceiver;
 	TypeHandlers						mHandlers;
-	app::WindowRef						mWindow;
 };
 	
 namespace detail {
 	
+//! Represents the base info of a tuio type.
 class Type {
 public:
+	//! Returns the sessionId for this type.
 	int32_t getSessionId() const { return mSessionId; }
+	//! Returns the source of this type.
 	const std::string& getSource() const { return mSource; }
+	//! Sets the source of this type.
 	void setSource( const std::string &source ) { mSource = source; }
+	//!
 	bool operator<( const Type &other );
-	
 protected:
 	Type( const osc::Message &msg );
-	Type() {}
-	Type( const Type &other ) = default;
 	Type( Type &&other ) NOEXCEPT;
-	Type& operator=( const Type &other ) = default;
 	Type& operator=( Type &&other ) NOEXCEPT;
+	Type( const Type &other ) = default;
+	Type& operator=( const Type &other ) = default;
 	~Type() = default;
 	
 	int32_t		mSessionId;
@@ -142,22 +141,20 @@ template<typename VEC_T>
 class Cursor : public Type {
 public:
 	Cursor( const osc::Message &msg );
-	
-	Cursor( const Cursor &other ) = default;
 	Cursor( Cursor &&other ) NOEXCEPT;
-	Cursor& operator=( const Cursor &other ) = default;
 	Cursor& operator=( Cursor &&other ) NOEXCEPT;
+	Cursor( const Cursor &other ) = default;
+	Cursor& operator=( const Cursor &other ) = default;
 	~Cursor() = default;
 	
 	const VEC_T&	getPosition() const { return mPosition; }
 	const VEC_T&	getVelocity() const { return mVelocity; }
 	float			getAcceleration() const { return mAcceleration; }
 	
-	app::TouchEvent::Touch	convertToTouch() const;
+	app::TouchEvent::Touch	convertToTouch( const ci::app::WindowRef &window ) const;
 	
 protected:
-	VEC_T		mPosition,
-	mVelocity;
+	VEC_T		mPosition, mVelocity;
 	float		mAcceleration;
 };
 
@@ -165,10 +162,7 @@ template<typename VEC_T, typename ROT_T>
 class Object : public Type {
 public:
 	Object( const osc::Message &msg );
-	
-	Object( const Object &other ) = default;
 	Object( Object &&other ) NOEXCEPT;
-	Object& operator=( const Object &other ) = default;
 	Object& operator=( Object &&other ) NOEXCEPT;
 	~Object() = default;
 	
@@ -190,10 +184,7 @@ template<typename VEC_T, typename ROT_T, typename DIM_T>
 class Blob : public Type {
 public:
 	Blob( const osc::Message &msg );
-	Blob() : Type() {}
-	Blob( const Blob &other ) = default;
 	Blob( Blob &&other ) NOEXCEPT;
-	Blob& operator=( const Blob &other ) = default;
 	Blob& operator=( Blob &&other ) NOEXCEPT;
 	~Blob() = default;
 	
@@ -216,7 +207,6 @@ protected:
 class Blob2D : public detail::Blob<ci::vec2, float, ci::vec2> {
 public:
 	Blob2D( const osc::Message &msg );
-	Blob2D() : Blob() {}
 	float getArea() const { return mGeometry; }
 };
 class Blob25D : public detail::Blob<ci::vec3, float, ci::vec2> {

@@ -37,44 +37,79 @@ using namespace std;
 
 class TuioClientApp : public App {
   public:
-	void setup();
-
+	void setup() override;
+	void mouseDown( MouseEvent event ) override;
 //	void draw2d( tuio::Cursor2D cursor, int sourcenum );
 //	void draw2d( tuio::Cursor2D cursor );
 //	void draw25d( tuio::Cursor25D cursor );
-	void draw();
+	void draw() override;
 	
 	void added( const tuio::Cursor2D &cursor );
 	void updated( const tuio::Cursor2D &cursor );
 	void removed( const tuio::Cursor2D &cursor );
+	
+	void touchesBegan( TouchEvent event ) override;
+	void touchesMoved( TouchEvent event ) override;
+	void touchesEnded( TouchEvent event ) override;
 	
 	std::shared_ptr<tuio::Receiver> tuio;
 };
 
 void TuioClientApp::setup()
 {
-	tuio = std::shared_ptr<tuio::Receiver>( new tuio::Receiver( app::App::get()->getWindow() ) );
-	tuio->bind();
-	tuio->listen();
+	tuio = std::shared_ptr<tuio::Receiver>( new tuio::Receiver() );
+	auto receiver = tuio->getOscReceiver();
+	receiver->bind();
+	receiver->listen();
 	
-	tuio->setAdded<tuio::Cursor2D>( std::bind( &TuioClientApp::added, this, std::placeholders::_1 ) );
-	tuio->setUpdated<tuio::Cursor2D>( std::bind( &TuioClientApp::updated, this, std::placeholders::_1 ) );
-	tuio->setRemoved<tuio::Cursor2D>( std::bind( &TuioClientApp::removed, this, std::placeholders::_1 ) );
+	tuio->setAddedFn<tuio::Cursor2D>( std::bind( &TuioClientApp::added, this, std::placeholders::_1 ) );
+	tuio->setUpdatedFn<tuio::Cursor2D>( std::bind( &TuioClientApp::updated, this, std::placeholders::_1 ) );
+	tuio->setRemovedFn<tuio::Cursor2D>( std::bind( &TuioClientApp::removed, this, std::placeholders::_1 ) );
+}
+
+void TuioClientApp::touchesBegan( cinder::app::TouchEvent event )
+{
+	cout << __FUNCTION__ << " size: " << event.getTouches().size() << endl;
+}
+
+void TuioClientApp::touchesMoved( cinder::app::TouchEvent event )
+{
+	cout << __FUNCTION__ << " size: " << event.getTouches().size() << endl;
+}
+
+void TuioClientApp::touchesEnded( cinder::app::TouchEvent event )
+{
+	cout << __FUNCTION__ << " size: " << event.getTouches().size() << endl;
 }
 
 void TuioClientApp::added( const tuio::Cursor2D &cursor )
 {
-	cout << "added: " << cursor.getSessionId() << endl;
+	cout << __FUNCTION__ << " " << cursor.getSessionId() << endl;
 }
 
 void TuioClientApp::updated( const tuio::Cursor2D &cursor )
 {
-	cout << "updated: " << cursor.getSessionId() << endl;
+	cout << __FUNCTION__ << " size: " << cursor.getSessionId() << endl;
 }
 
 void TuioClientApp::removed( const tuio::Cursor2D &cursor )
 {
-	cout << "removed: " << cursor.getSessionId() << endl;
+	cout << __FUNCTION__ << " size: " << cursor.getSessionId() << endl;
+}
+
+void TuioClientApp::mouseDown( cinder::app::MouseEvent event )
+{
+	static bool window = true;
+	if( window ) {
+		tuio->setWindowReceiver( getWindow() );
+		window = false;
+	}
+	else {
+		tuio->setAddedFn<tuio::Cursor2D>( std::bind( &TuioClientApp::added, this, std::placeholders::_1 ) );
+		tuio->setUpdatedFn<tuio::Cursor2D>( std::bind( &TuioClientApp::updated, this, std::placeholders::_1 ) );
+		tuio->setRemovedFn<tuio::Cursor2D>( std::bind( &TuioClientApp::removed, this, std::placeholders::_1 ) );
+		window = true;
+	}
 }
 
 //void TuioClientApp::draw2d( tuio::Cursor2D cursor, int sourcenum )
