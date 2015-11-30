@@ -312,7 +312,20 @@ Receiver::Receiver( uint16_t localPort, const asio::ip::udp &protocol, asio::io_
 	
 }
 	
-Receiver::Receiver( const osc::ReceiverBase *ptr )
+Receiver::Receiver( const app::WindowRef &window, uint16_t localPort, const asio::ip::udp &protocol )
+: mReceiver( new osc::ReceiverUdp( localPort, protocol, app::App::get()->io_service() ) )
+{
+	setupWindowReceiver( window );
+}
+	
+Receiver::Receiver( const app::WindowRef &window, osc::ReceiverBase *ptr )
+: mReceiver( ptr )
+{
+	setupWindowReceiver( window );
+}
+	
+Receiver::Receiver( osc::ReceiverBase *ptr )
+: mReceiver(  ptr )
 {
 	
 }
@@ -377,25 +390,23 @@ void Receiver::setAddedFn( TypeFn<Cursor2D> callback )
 {
 	auto address = getOscAddressFromType<Cursor2D>();
 	auto found = mHandlers.find( address );
+	bool create = true;
 	if( found != mHandlers.end() ) {
 		auto typeHandler = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(found->second.get());
 		// could be WindowCursorHandler
 		if( typeHandler ) {
 			typeHandler->setAddHandler( callback );
+			create = false;
 		}
 		else {
 			// if so first remove listener
 			mReceiver->removeListener( address );
 			// then destroy and make a new.
 			mHandlers.erase( found );
-			auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::SeperatedTypeHandler<Cursor2D>>( new detail::SeperatedTypeHandler<Cursor2D>() ) );
-			auto created = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(inserted.first->second.get());
-			created->setAddHandler( callback );
-			mReceiver->setListener( address, std::bind( &detail::TypeHandlerBase::handleMessage,
-													   created, std::placeholders::_1 ) );
 		}
 	}
-	else {
+	
+	if( create ) {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::SeperatedTypeHandler<Cursor2D>>( new detail::SeperatedTypeHandler<Cursor2D>() ) );
 		auto created = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(inserted.first->second.get());
 		created->setAddHandler( callback );
@@ -408,25 +419,23 @@ void Receiver::setUpdatedFn( TypeFn<Cursor2D> callback )
 {
 	auto address = getOscAddressFromType<Cursor2D>();
 	auto found = mHandlers.find( address );
+	bool create = true;
 	if( found != mHandlers.end() ) {
 		auto typeHandler = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(found->second.get());
 		// could be WindowCursorHandler
 		if( typeHandler ) {
 			typeHandler->setUpdateHandler( callback );
+			create = false;
 		}
 		else {
 			// if so first remove listener
 			mReceiver->removeListener( address );
 			// then destroy and make a new.
 			mHandlers.erase( found );
-			auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::SeperatedTypeHandler<Cursor2D>>( new detail::SeperatedTypeHandler<Cursor2D>() ) );
-			auto created = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(inserted.first->second.get());
-			created->setUpdateHandler( callback );
-			mReceiver->setListener( address, std::bind( &detail::TypeHandlerBase::handleMessage,
-													   created, std::placeholders::_1 ) );
 		}
 	}
-	else {
+	
+	if( create ) {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::SeperatedTypeHandler<Cursor2D>>( new detail::SeperatedTypeHandler<Cursor2D>() ) );
 		auto created = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(inserted.first->second.get());
 		created->setUpdateHandler( callback );
@@ -439,25 +448,23 @@ void Receiver::setRemovedFn( TypeFn<Cursor2D> callback )
 {
 	auto address = getOscAddressFromType<Cursor2D>();
 	auto found = mHandlers.find( address );
+	bool create = true;
 	if( found != mHandlers.end() ) {
 		auto typeHandler = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(found->second.get());
 		// could be WindowCursorHandler
 		if( typeHandler ) {
 			typeHandler->setRemoveHandler( callback );
+			create = false;
 		}
 		else {
 			// if so first remove listener
 			mReceiver->removeListener( address );
 			// then destroy and make a new.
 			mHandlers.erase( found );
-			auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::SeperatedTypeHandler<Cursor2D>>( new detail::SeperatedTypeHandler<Cursor2D>() ) );
-			auto created = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(inserted.first->second.get());
-			created->setRemoveHandler( callback );
-			mReceiver->setListener( address, std::bind( &detail::TypeHandlerBase::handleMessage,
-													   created, std::placeholders::_1 ) );
 		}
 	}
-	else {
+	
+	if( create ) {
 		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::SeperatedTypeHandler<Cursor2D>>( new detail::SeperatedTypeHandler<Cursor2D>() ) );
 		auto created = dynamic_cast<detail::SeperatedTypeHandler<Cursor2D>*>(inserted.first->second.get());
 		created->setRemoveHandler( callback );
@@ -477,31 +484,13 @@ void Receiver::clear()
 	}
 }
 	
-void Receiver::setWindowReceiver( ci::app::WindowRef window )
+void Receiver::setupWindowReceiver( ci::app::WindowRef window )
 {
 	auto address = getOscAddressFromType<Cursor2D>();
-	auto found = mHandlers.find( address );
-	detail::WindowCursorHandler *handler = nullptr;
-	if( found != mHandlers.end() ) {
-		auto castHandler = dynamic_cast<detail::WindowCursorHandler*>(found->second.get());
-		// could be TypeHandler<Cursor2D>
-		if( castHandler ) {
-			handler = castHandler;
-		}
-		else {
-			// if so first remove listener
-			mReceiver->removeListener( address );
-			// we need to destroy and make a new.
-			mHandlers.erase( found );
-		}
-	}
-	
-	if( ! handler ) {
-		auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::WindowCursorHandler>( new detail::WindowCursorHandler() ) );
-		handler = dynamic_cast<detail::WindowCursorHandler*>(inserted.first->second.get());
-		mReceiver->setListener( address, std::bind( &detail::TypeHandlerBase::handleMessage,
+	auto inserted = mHandlers.emplace( address, std::unique_ptr<detail::WindowCursorHandler>( new detail::WindowCursorHandler() ) );
+	auto handler = dynamic_cast<detail::WindowCursorHandler*>(inserted.first->second.get());
+	mReceiver->setListener( address, std::bind( &detail::TypeHandlerBase::handleMessage,
 												   handler, std::placeholders::_1 ) );
-	}
 	
 	// Take a weak pointer, so that we don't try to access it after it's been destroyed.
 	auto weakWindow = std::weak_ptr<app::Window>( window );

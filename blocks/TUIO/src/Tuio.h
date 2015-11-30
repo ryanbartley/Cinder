@@ -71,7 +71,11 @@ public:
 	Receiver( uint16_t localPort = DEFAULT_TUIO_PORT,
 		      const asio::ip::udp &protocol = asio::ip::udp::v4(),
 		      asio::io_service &io = ci::app::App::get()->io_service() );
-	Receiver( const osc::ReceiverBase *ptr );
+	Receiver( const app::WindowRef &window,
+			 uint16_t localPort = DEFAULT_TUIO_PORT,
+			 const asio::ip::udp &protocol = asio::ip::udp::v4() );
+	Receiver( osc::ReceiverBase *ptr );
+	Receiver( const app::WindowRef &window, osc::ReceiverBase *ptr );
 	
 	//! Registers an async callback which fires when a new cursor is added
 	template<typename TuioType>
@@ -82,8 +86,6 @@ public:
 	//! Registers an async callback which fires when a cursor is removed
 	template<typename TuioType>
 	void	setRemovedFn( TypeFn<TuioType> callback );
-	
-	void	setWindowReceiver( ci::app::WindowRef window );
 	
 	//! Removes Receivers for TuioType
 	template<typename TuioType>
@@ -106,7 +108,8 @@ public:
 	
 private:
 	template<typename T>
-	static const char* getOscAddressFromType();
+	static const char*	getOscAddressFromType();
+	void				setupWindowReceiver( ci::app::WindowRef window );
 	
 	std::unique_ptr<osc::ReceiverBase>	mReceiver;
 	TypeHandlers						mHandlers;
