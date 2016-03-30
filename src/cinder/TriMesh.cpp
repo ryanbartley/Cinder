@@ -79,6 +79,7 @@ TriMesh::Format::Format()
 {
 	mPositionsDims = mNormalsDims = mTangentsDims = mBitangentsDims = mColorsDims = 0;
 	mTexCoords0Dims = mTexCoords1Dims = mTexCoords2Dims = mTexCoords3Dims = 0;
+	mBoneIndexDims = mBoneWeightDims = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,6 +113,8 @@ void TriMesh::loadFromSource( const geom::Source &source )
 	if( mTexCoords1Dims ) attribs.insert( geom::Attrib::TEX_COORD_1 );
 	if( mTexCoords2Dims ) attribs.insert( geom::Attrib::TEX_COORD_2 );
 	if( mTexCoords3Dims ) attribs.insert( geom::Attrib::TEX_COORD_3 );
+	if( mBoneIndexDims ) attribs.insert( geom::Attrib::BONE_INDEX );
+	if( mBoneWeightDims ) attribs.insert( geom::Attrib::BONE_WEIGHT );
 	
 	TriMeshGeomTarget target( this );
 	source.loadInto( &target, attribs );
@@ -132,6 +135,8 @@ void TriMesh::initFromFormat( const TriMesh::Format &format )
 	mTexCoords1Dims = format.mTexCoords1Dims;
 	mTexCoords2Dims = format.mTexCoords2Dims;
 	mTexCoords3Dims = format.mTexCoords3Dims;
+	mBoneIndexDims = format.mBoneIndexDims;
+	mBoneWeightDims = format.mBoneWeightDims;
 }
 
 TriMesh::Format TriMesh::formatFromSource( const geom::Source &source )
@@ -173,6 +178,12 @@ TriMesh::Format TriMesh::formatFromSource( const geom::Source &source )
 	// tex coords 3
 	if( source.getAttribDims( geom::Attrib::TEX_COORD_3 ) > 0 )
 		result.mTexCoords3Dims = source.getAttribDims( geom::Attrib::TEX_COORD_3 );
+	
+	if( source.getAttribDims( geom::Attrib::BONE_INDEX ) > 0 )
+		result.mBoneIndexDims = source.getAttribDims( geom::Attrib::BONE_INDEX );
+	
+	if( source.getAttribDims( geom::Attrib::BONE_WEIGHT ) > 0 )
+		result.mBoneWeightDims = source.getAttribDims( geom::Attrib::BONE_WEIGHT );
 	
 	return result;
 }
@@ -1008,6 +1019,8 @@ uint8_t TriMesh::getAttribDims( geom::Attrib attr ) const
 		case geom::Attrib::NORMAL: return mNormalsDims;
 		case geom::Attrib::TANGENT: return mTangentsDims;
 		case geom::Attrib::BITANGENT: return mBitangentsDims;
+		case geom::Attrib::BONE_INDEX: return mBoneIndexDims;
+		case geom::Attrib::BONE_WEIGHT: return mBoneWeightDims;
 		default:
 			return 0;
 	}
@@ -1026,6 +1039,8 @@ geom::AttribSet	TriMesh::getAvailableAttribs() const
 	if( mNormalsDims ) result.insert( geom::Attrib::NORMAL );
 	if( mTangentsDims ) result.insert( geom::Attrib::TANGENT );
 	if( mBitangentsDims ) result.insert( geom::Attrib::BITANGENT );
+	if( mBoneIndexDims ) result.insert( geom::Attrib::BONE_INDEX );
+	if( mBoneWeightDims ) result.insert( geom::Attrib::BONE_WEIGHT );
 
 	return result;
 }
@@ -1042,6 +1057,8 @@ void TriMesh::getAttribPointer( geom::Attrib attr, const float **resultPtr, size
 		case geom::Attrib::NORMAL: *resultPtr = (const float*)mNormals.data(); *resultStrideBytes = 0; *resultDims = mNormalsDims; break;
 		case geom::Attrib::TANGENT: *resultPtr = (const float*)mTangents.data(); *resultStrideBytes = 0; *resultDims = mTangentsDims; break;
 		case geom::Attrib::BITANGENT: *resultPtr = (const float*)mBitangents.data(); *resultStrideBytes = 0; *resultDims = mBitangentsDims; break;
+		case geom::Attrib::BONE_WEIGHT: *resultPtr = (const float*)mBoneWeights.data(); *resultStrideBytes = 0; *resultDims = mBoneWeightDims; break;
+		case geom::Attrib::BONE_INDEX: *resultPtr = (const float*)mBoneIndices.data(); *resultStrideBytes = 0; *resultDims = mBoneIndexDims; break;
 		default:
 			*resultPtr = nullptr; *resultStrideBytes = 0; *resultDims = 0;
 	}
@@ -1088,6 +1105,14 @@ void TriMesh::copyAttrib( geom::Attrib attr, uint8_t dims, size_t stride, const 
 		case geom::Attrib::BITANGENT:
 			mBitangents.resize( numVertices );
 			geom::copyData( dims, srcData, numVertices, 3, 0, (float*)mBitangents.data() );
+		break;
+		case geom::Attrib::BONE_INDEX:
+			mBoneIndices.resize( mBoneIndexDims * numVertices );
+			geom::copyData( dims, srcData, numVertices, mBoneIndexDims, 0, mBoneIndices.data() );
+		break;
+		case geom::Attrib::BONE_WEIGHT:
+			mBoneWeights.resize( mBoneWeightDims * numVertices );
+			geom::copyData( dims, srcData, numVertices, mBoneWeightDims, 0, mBoneWeights.data() );
 		break;
 		default:
 			throw geom::ExcMissingAttrib();

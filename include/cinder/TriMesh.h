@@ -61,9 +61,12 @@ class TriMesh : public geom::Source {
 		Format&		texCoords2( uint8_t dims = 2 ) { mTexCoords2Dims = dims; return *this; }
 		//! Enables and establishes the dimensions of texture coords for unit 3
 		Format&		texCoords3( uint8_t dims = 2 ) { mTexCoords3Dims = dims; return *this; }
+		Format&		boneIndex( uint8_t dims = 4 ) { mBoneIndexDims = dims; return *this; }
+		Format&		boneWeight( uint8_t dims = 4 ) { mBoneWeightDims = dims; return *this; }
 		
 		uint8_t		mPositionsDims, mNormalsDims, mTangentsDims, mBitangentsDims, mColorsDims;
-		uint8_t		mTexCoords0Dims, mTexCoords1Dims, mTexCoords2Dims, mTexCoords3Dims;
+		uint8_t		mTexCoords0Dims, mTexCoords1Dims, mTexCoords2Dims, mTexCoords3Dims,
+					mBoneIndexDims, mBoneWeightDims;
 	};
 
 	static TriMeshRef	create() { return TriMeshRef( new TriMesh( Format().positions().normals().texCoords() ) ); }
@@ -263,6 +266,18 @@ class TriMesh : public geom::Source {
 	//! Returns a pointer to the TexCoord3 values of the TriMesh vec<DIM>*. For example, if the TriMesh has 2D TexCoord3 values, use getTexCoords3<2>().
 	template<uint8_t DIM>
 	const typename VECDIM<DIM,float>::TYPE*	getTexCoords3() const { assert(mTexCoords3Dims==DIM); return (typename VECDIM<DIM,float>::TYPE*)mTexCoords3.data(); }
+	//! Returns a pointer to the TexCoord3 values of the TriMesh vec<DIM>*. For example, if the TriMesh has 2D TexCoord3 values, use getTexCoords3<2>().
+	template<uint8_t DIM>
+	typename VECDIM<DIM,float>::TYPE*		getBoneIndices() { assert(mBoneIndexDims==DIM); return (typename VECDIM<DIM,float>::TYPE*)mBoneIndices.data(); }
+	//! Returns a pointer to the TexCoord3 values of the TriMesh vec<DIM>*. For example, if the TriMesh has 2D TexCoord3 values, use getTexCoords3<2>().
+	template<uint8_t DIM>
+	const typename VECDIM<DIM,float>::TYPE*	getBoneIndices() const { assert(mBoneIndexDims==DIM); return (typename VECDIM<DIM,float>::TYPE*)mBoneIndices.data(); }
+	//! Returns a pointer to the TexCoord3 values of the TriMesh vec<DIM>*. For example, if the TriMesh has 2D TexCoord3 values, use getTexCoords3<2>().
+	template<uint8_t DIM>
+	typename VECDIM<DIM,float>::TYPE*		getBoneWeights() { assert(mBoneWeightDims==DIM); return (typename VECDIM<DIM,float>::TYPE*)mBoneWeights.data(); }
+	//! Returns a pointer to the TexCoord3 values of the TriMesh vec<DIM>*. For example, if the TriMesh has 2D TexCoord3 values, use getTexCoords3<2>().
+	template<uint8_t DIM>
+	const typename VECDIM<DIM,float>::TYPE*	getBoneWeights() const { assert(mBoneWeightDims==DIM); return (typename VECDIM<DIM,float>::TYPE*)mBoneWeights.data(); }
 	//! Trimesh indices are ordered such that the indices of triangle T are { indices[T*3+0], indices[T*3+1], indices[T*3+2] }
 	std::vector<uint32_t>&			getIndices() { return mIndices; }
 	//! Trimesh indices are ordered such that the indices of triangle T are { indices[T*3+0], indices[T*3+1], indices[T*3+2] }
@@ -292,6 +307,10 @@ class TriMesh : public geom::Source {
 	const std::vector<float>& getBufferTexCoords3() const { return mTexCoords3; }
 	//! Returns a reference to the texCoords3 buffer.
 	std::vector<float>& getBufferTexCoords3() { return mTexCoords3; }
+	const std::vector<float>& getBufferBoneWeights() const { return mBoneWeights; }
+	std::vector<float>& getBufferBoneWeights() { return mBoneWeights; }
+	const std::vector<float>& getBufferBoneIndices() const { return mBoneIndices; }
+	std::vector<float>& getBufferBoneIndices() { return mBoneIndices; }
 
 	//! Calculates the bounding box of all vertices. Fails if the positions are not 3D.
 	AxisAlignedBox	calcBoundingBox() const;
@@ -356,13 +375,14 @@ class TriMesh : public geom::Source {
 
 	uint8_t		mPositionsDims, mNormalsDims, mTangentsDims, mBitangentsDims, mColorsDims;
 	uint8_t		mTexCoords0Dims, mTexCoords1Dims, mTexCoords2Dims, mTexCoords3Dims;
+	uint8_t		mBoneIndexDims, mBoneWeightDims;
   
 	std::vector<float>		mPositions;
 	std::vector<float>		mColors;
 	std::vector<vec3>		mNormals; // always dim=3
 	std::vector<vec3>		mTangents; // always dim=3
 	std::vector<vec3>		mBitangents; // always dim=3
-	std::vector<float>		mTexCoords0, mTexCoords1, mTexCoords2, mTexCoords3;
+	std::vector<float>		mTexCoords0, mTexCoords1, mTexCoords2, mTexCoords3, mBoneWeights, mBoneIndices;
 	std::vector<uint32_t>	mIndices;
 	
 	friend class TriMeshGeomTarget;
