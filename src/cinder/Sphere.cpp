@@ -20,11 +20,17 @@
  POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "cinder/AxisAlignedBox.h"
 #include "cinder/Sphere.h"
 
 using std::vector;
 
 namespace cinder {
+
+bool Sphere::intersects( const AxisAlignedBox &box ) const
+{
+	return box.intersects( *this );
+}
 
 bool Sphere::intersects( const Ray &ray ) const
 {
@@ -86,6 +92,37 @@ int Sphere::intersect( const Ray &ray, float *intersection ) const
 	}
 
 	return 0;
+}
+
+int Sphere::intersect( const Ray &ray, float *min, float *max ) const
+{
+	vec3		temp = ray.getOrigin() - mCenter;
+	float 		a = dot( ray.getDirection(), ray.getDirection() );
+	float 		b = 2 * dot( temp, ray.getDirection() );
+	float 		c = dot( temp, temp ) - mRadius * mRadius;
+	float 		disc = b * b - 4 * a * c;
+
+	int count = 0;
+	if( disc >= 0.0f ) {
+		float t;
+
+		float e = math<float>::sqrt( disc );
+		float denom = 2.0f * a;
+
+		t = ( -b - e ) / denom;    // smaller root
+		if( t > EPSILON_VALUE ) {
+			*min = t;
+			count++;
+		}
+
+		t = ( -b + e ) / denom;    // larger root
+		if( t > EPSILON_VALUE ) {
+			*max = t;
+			count++;
+		}
+	}
+
+	return count;
 }
 
 vec3 Sphere::closestPoint( const Ray &ray ) const
@@ -209,7 +246,7 @@ float Sphere::calcProjectedArea( float focalLength, vec2 screenSizePixels ) cons
 	float z2 = o.z * o.z;
 	float l2 = dot( o, o );
 	
-	float area = -M_PI * focalLength * focalLength * r2 * sqrt( fabs((l2-r2)/(r2-z2)) ) / (r2-z2);
+	float area = -float( M_PI ) * focalLength * focalLength * r2 * sqrt( fabs((l2-r2)/(r2-z2)) ) / (r2-z2);
 	float aspectRatio = screenSizePixels.x / screenSizePixels.y;
 	return area * screenSizePixels.x * screenSizePixels.y * 0.25f / aspectRatio;
 }

@@ -8,12 +8,15 @@
 #include "cinder/audio/GainNode.h"
 #include "cinder/audio/ChannelRouterNode.h"
 #include "cinder/audio/MonitorNode.h"
+#include "cinder/audio/SampleRecorderNode.h"
 #include "cinder/audio/dsp/Dsp.h"
 #include "cinder/audio/Exception.h"
 
 #include "../../common/AudioTestGui.h"
 
 // TODO: check iOS 6+ interruption handlers via notification
+
+const double RECORD_SECONDS = 2.0;
 
 using namespace ci;
 using namespace ci::app;
@@ -30,9 +33,12 @@ class DeviceTestApp : public App {
 	void setupMultiChannelDevice( const string &deviceName );
 	void setupMultiChannelDeviceWindows( const string &deviceName );
 	void printDeviceDetails( const audio::DeviceRef &device );
+	void startRecording();
+	void writeRecordedToFile();
 
 	void setupSine();
 	void setupNoise();
+	void setupInputPulled();
 	void setupIOClean();
 	void setupIOProcessed();
 	void setupIOAndSine();
@@ -48,12 +54,13 @@ class DeviceTestApp : public App {
 	audio::InputDeviceNodeRef		mInputDeviceNode;
 	audio::OutputDeviceNodeRef		mOutputDeviceNode;
 	audio::MonitorNodeRef			mMonitor;
+	audio::BufferRecorderNodeRef	mRecorder;
 	audio::GainNodeRef				mGain;
 	audio::GenNodeRef				mGen;
 
 	vector<TestWidget *> mWidgets;
 	VSelector mTestSelector, mInputSelector, mOutputSelector;
-	Button mPlayButton;
+	Button mPlayButton, mRecordButton;
 	HSlider mGainSlider;
 	TextInput mSamplerateInput, mFramesPerBlockInput, mNumInChannelsInput, mNumOutChannelsInput, mSendChannelInput;
 
@@ -81,15 +88,27 @@ void DeviceTestApp::setup()
 	//setupMultiChannelDevice( "PreSonus FIREPOD (1431)" );
 //	setupMultiChannelDeviceWindows( "MOTU Analog (MOTU Audio Wave for 64 bit)" );
 
-	PRINT_GRAPH( ctx );
+	mRecorder = ctx->makeNode( new audio::BufferRecorderNode( RECORD_SECONDS * ctx->getSampleRate() ) );
+	mRecorder->setEnabled( false );
+	mGain >> mRecorder;
 
 	setupUI();
+	setupTest( mTestSelector.currentSection() );
 
+//	setupInputPulled();
+//	setupIOClean();
+
+	PRINT_GRAPH( ctx );
 	CI_LOG_V( "Context samplerate: " << ctx->getSampleRate() );
 }
 
 void DeviceTestApp::setOutputDevice( const audio::DeviceRef &device, size_t numChannels )
 {
+	if( ! device ) {
+		CI_LOG_E( "Empty DeviceRef" );
+		return;
+	}
+
 	auto ctx = audio::master();
 
 	ctx->uninitializeAllNodes();
@@ -128,6 +147,11 @@ void DeviceTestApp::setOutputDevice( const audio::DeviceRef &device, size_t numC
 
 void DeviceTestApp::setInputDevice( const audio::DeviceRef &device, size_t numChannels  )
 {
+	if( ! device ) {
+		CI_LOG_E( "Empty DeviceRef" );
+		return;
+	}
+
 	audio::ScopedEnableNode enableNodeScope( mInputDeviceNode, false );
 
 	if( mInputDeviceNode )
@@ -138,8 +162,6 @@ void DeviceTestApp::setInputDevice( const audio::DeviceRef &device, size_t numCh
 		format.channels( numChannels );
 
 	mInputDeviceNode = audio::master()->createInputDeviceNode( device, format );
-
-	setupTest( mTestSelector.currentSection() );
 
 	CI_LOG_V( "InputDeviceNode device properties: " );
 	printDeviceDetails( device );
@@ -210,6 +232,14 @@ void DeviceTestApp::setupNoise()
 
 	mGen->connect( mGain );
 	mGen->enable();
+}
+
+void DeviceTestApp::setupInputPulled()
+{
+	mOutputDeviceNode->disconnectAllInputs();
+
+	mInputDeviceNode >> mGain >> mMonitor;
+	mInputDeviceNode->enable();
 }
 
 void DeviceTestApp::setupIOClean()
@@ -283,6 +313,27 @@ void DeviceTestApp::setupSendStereo()
 	mGen->enable();
 }
 
+void DeviceTestApp::startRecording()
+{
+	CI_LOG_I( "begin record..." );
+
+	mRecorder->start();
+	timeline().add( [this] {
+		writeRecordedToFile();
+		mRecorder->disable();
+	}, timeline().getCurrentTime() + RECORD_SECONDS );
+}
+
+void DeviceTestApp::writeRecordedToFile()
+{
+	const string fileName = "recorder_out.wav";
+	CI_LOG_V( "writing to: " << fileName );
+
+	mRecorder->writeToFile( fileName );
+
+	CI_LOG_V( "...complete." );
+}
+
 void DeviceTestApp::setupUI()
 {
 	mInputDeviceNodeUnderrunFade = mInputDeviceNodeOverrunFade = mOutputDeviceNodeClipFade = 0;
@@ -291,8 +342,12 @@ void DeviceTestApp::setupUI()
 	mPlayButton = Button( true, "stopped", "playing" );
 	mWidgets.push_back( &mPlayButton );
 
+	mRecordButton = Button( false, "record" );
+	mWidgets.push_back( &mRecordButton );
+
 	mTestSelector.mSegments.push_back( "sinewave" );
 	mTestSelector.mSegments.push_back( "noise" );
+	mTestSelector.mSegments.push_back( "input (pulled)" );
 	mTestSelector.mSegments.push_back( "I/O (clean)" );
 	mTestSelector.mSegments.push_back( "I/O (processed)" );
 	mTestSelector.mSegments.push_back( "I/O and sine" );
@@ -302,9 +357,11 @@ void DeviceTestApp::setupUI()
 
 #if defined( CINDER_COCOA_TOUCH )
 	mPlayButton.mBounds = Rectf( 0, 0, 120, 60 );
+	mRecordButton.mBounds = Rectf( 130, 0, 190, 34 );
 	mTestSelector.mBounds = Rectf( getWindowWidth() - 190, 0, getWindowWidth(), 180 );
 #else
 	mPlayButton.mBounds = Rectf( 0, 0, 200, 60 );
+	mRecordButton.mBounds = Rectf( 210, 0, 310, 40 );
 	mTestSelector.mBounds = Rectf( getWindowCenter().x + 110, 0, (float)getWindowWidth(), 180 );
 #endif
 
@@ -399,6 +456,8 @@ void DeviceTestApp::processTap( ivec2 pos )
 //	TextInput *selectedInput = false;
 	if( mPlayButton.hitTest( pos ) )
 		audio::master()->setEnabled( ! audio::master()->isEnabled() );
+	else if( mRecordButton.hitTest( pos ) )
+		startRecording();
 	else if( mSamplerateInput.hitTest( pos ) ) {
 	}
 	else if( mFramesPerBlockInput.hitTest( pos ) ) {
@@ -431,6 +490,7 @@ void DeviceTestApp::processTap( ivec2 pos )
 		CI_LOG_V( "selected output device named: " << dev->getName() << ", key: " << dev->getKey() );
 
 		setOutputDevice( dev );
+		// Don't need to reset test as the Device will be updated on the Context's OutputDeviceNode and the change will propagate through the graph
 		return;
 	}
 
@@ -440,6 +500,7 @@ void DeviceTestApp::processTap( ivec2 pos )
 		CI_LOG_V( "selected input named: " << dev->getName() << ", key: " << dev->getKey() );
 
 		setInputDevice( dev );
+		setupTest( mTestSelector.currentSection() ); // need to reset the test so that we construct the InputDeviceNode with the proper Device
 		return;
 	}
 }
@@ -462,6 +523,8 @@ void DeviceTestApp::setupTest( string test )
 		setupSine();
 	else if( test == "noise" )
 		setupNoise();
+	else if( test == "input (pulled)" )
+		setupInputPulled();
 	else if( test == "I/O (clean)" )
 		setupIOClean();
 	else if( test == "I/O (processed)" )
@@ -610,4 +673,5 @@ void DeviceTestApp::draw()
 
 CINDER_APP( DeviceTestApp, RendererGl, []( App::Settings *settings ) {
 	settings->setWindowSize( 800, 600 );
+	settings->setWindowPos( 6, 30 );
 } )
