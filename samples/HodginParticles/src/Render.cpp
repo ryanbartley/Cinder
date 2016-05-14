@@ -32,13 +32,14 @@ void ParticleRender::setup()
 	mParticleBatch = gl::Batch::create( particleMesh, particleGlsl );
 	mParticleTexture = gl::Texture2d::create( loadImage( loadAsset( "particle.png" ) ) );
 	
-	std::vector<uint32_t> indices( MAX_PARTICLES * (MAX_TAIL_VERTICES_PER_PARTICLE + 1) );
+	std::vector<uint32_t> indices;
+	indices.reserve( MAX_PARTICLES * (MAX_TAIL_VERTICES_PER_PARTICLE + 1) );
 	int index_multiplier = 0;
-	for( int i = 0; i < indices.size(); i+=MAX_TAIL_VERTICES_PER_PARTICLE + 1 ) {
+	for( int i = 0; i < MAX_PARTICLES; i++ ) {
 		for( int j = 0; j < MAX_TAIL_VERTICES_PER_PARTICLE; j++ ) {
-			indices[i+j] = (index_multiplier * MAX_TAIL_VERTICES_PER_PARTICLE) + j;
+			indices.push_back( (index_multiplier * MAX_TAIL_VERTICES_PER_PARTICLE) + j );
 		}
-		indices[i+MAX_TAIL_VERTICES_PER_PARTICLE] = PRIMITIVE_RESTART_INDEX;
+		indices.push_back( PRIMITIVE_RESTART_INDEX );
 		index_multiplier++;
 	}
 	auto tailIndices = gl::Vbo::create( GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * indices.size(), indices.data(), GL_STATIC_DRAW );
@@ -55,6 +56,8 @@ void ParticleRender::renderParticles()
 {
 	if( mNumActiveParticles == 0 ) return;
 	
+	gl::ScopedDepthWrite scopeWrite( false );
+	gl::ScopedDepthTest scopeDepth( true );
 	gl::ScopedBlendAdditive scopeAdditive;
 	gl::ScopedTextureBind	scopeTex( mParticleTexture, 0 );
 	gl::ScopedState			scopePointSize( GL_VERTEX_PROGRAM_POINT_SIZE, true );
@@ -67,6 +70,8 @@ void ParticleRender::renderTrails()
 {
 	if( mNumActiveParticles == 0 ) return;
 	
+	gl::ScopedDepthWrite scopeWrite( false );
+	gl::ScopedDepthTest scopeDepth( true );
 	gl::ScopedBlendAdditive scopeAdditive;
 	gl::ScopedState			scopeState( GL_PRIMITIVE_RESTART, true );
 	glPrimitiveRestartIndex( PRIMITIVE_RESTART_INDEX );
@@ -115,7 +120,7 @@ void EmitterRender::renderEmitter( ParticleController &controller )
 {
 	gl::ScopedGlslProg		prog( mEmitterGlsl );
 	gl::ScopedBlendAlpha	alpha;
-	gl::ScopedDepth			depth( true, true );
+	gl::ScopedDepth			depth( true );
 	gl::ScopedTextureBind	tex0( mDiffuseTex,	0 );
 	gl::ScopedTextureBind	tex1( mNormalTex,	1 );
 	gl::ScopedTextureBind	tex2( mAoTex,		2 );

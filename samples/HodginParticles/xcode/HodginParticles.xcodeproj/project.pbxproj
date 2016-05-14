@@ -18,11 +18,11 @@
 		00B9955B1B128DF400A5C623 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B995591B128DF400A5C623 /* IOSurface.framework */; };
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
-		B30C0AE61B45BEDA00EEAE4B /* Particle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B30C0AE21B45BEDA00EEAE4B /* Particle.cpp */; };
-		B30C0AE71B45BEDA00EEAE4B /* ParticleController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B30C0AE31B45BEDA00EEAE4B /* ParticleController.cpp */; };
-		B3E14E531B4B10CB00142F77 /* Render.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3E14E511B4B10CB00142F77 /* Render.cpp */; };
-		BCE13100816F42B6B4BC59E8 /* HodginParticlesReduxApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C9EA6F60E5945B0AE29DF53 /* HodginParticlesReduxApp.cpp */; };
-		C231FAC59BCC4016B1A4BAD3 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = DEE8E1602D094B0092CE5EEC /* CinderApp.icns */; };
+		B321C9601CE67F7D00CEAA8B /* Particle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B321C95D1CE67F7D00CEAA8B /* Particle.cpp */; };
+		B321C9611CE67F7D00CEAA8B /* ParticleController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B321C95E1CE67F7D00CEAA8B /* ParticleController.cpp */; };
+		B321C9621CE67F7D00CEAA8B /* Render.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B321C95F1CE67F7D00CEAA8B /* Render.cpp */; };
+		B9005E7180C846B6B30D8497 /* HodginParticlesApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A05D42C03D584918BD615963 /* HodginParticlesApp.cpp */; };
+		E4CE9587F829434D8A0AE9A9 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = A0B00005E8EB43B78CCF2E63 /* CinderApp.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,32 +35,22 @@
 		00B784B20FF439BC000DE1D7 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		00B995581B128DF400A5C623 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		00B995591B128DF400A5C623 /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = System/Library/Frameworks/IOSurface.framework; sourceTree = SDKROOT; };
-		02BD21589AE444B2BF9306A2 /* Resources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
-		2C9EA6F60E5945B0AE29DF53 /* HodginParticlesReduxApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; name = HodginParticlesReduxApp.cpp; path = ../src/HodginParticlesReduxApp.cpp; sourceTree = "<group>"; };
+		4B613412C26D4066B433933D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
-		8D1107320486CEB800E47090 /* HodginParticlesRedux.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HodginParticlesRedux.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8DF03B300EB24988A6278D19 /* HodginParticlesRedux_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = HodginParticlesRedux_Prefix.pch; sourceTree = "<group>"; };
-		927082604F2447068E382EE9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B30C0ADE1B45BECB00EEAE4B /* Particle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Particle.h; path = ../include/Particle.h; sourceTree = "<group>"; };
-		B30C0ADF1B45BECB00EEAE4B /* ParticleController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ParticleController.h; path = ../include/ParticleController.h; sourceTree = "<group>"; };
-		B30C0AE21B45BEDA00EEAE4B /* Particle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Particle.cpp; path = ../src/Particle.cpp; sourceTree = "<group>"; };
-		B30C0AE31B45BEDA00EEAE4B /* ParticleController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ParticleController.cpp; path = ../src/ParticleController.cpp; sourceTree = "<group>"; };
-		B3BCEB371B60603600A863B2 /* ambientOcclusion.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ambientOcclusion.png; path = ../assets/ambientOcclusion.png; sourceTree = "<group>"; };
-		B3BCEB381B60603600A863B2 /* diffuse.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = diffuse.png; path = ../assets/diffuse.png; sourceTree = "<group>"; };
-		B3BCEB391B60603600A863B2 /* emitter.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; name = emitter.frag; path = ../assets/emitter.frag; sourceTree = "<group>"; };
-		B3BCEB3A1B60603600A863B2 /* emitter.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; name = emitter.vert; path = ../assets/emitter.vert; sourceTree = "<group>"; };
-		B3BCEB3B1B60603600A863B2 /* height.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = height.png; path = ../assets/height.png; sourceTree = "<group>"; };
-		B3BCEB3C1B60603600A863B2 /* normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = normal.png; path = ../assets/normal.png; sourceTree = "<group>"; };
-		B3BCEB3D1B60603600A863B2 /* particle.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; name = particle.frag; path = ../assets/particle.frag; sourceTree = "<group>"; };
-		B3BCEB3E1B60603600A863B2 /* particle.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = particle.png; path = ../assets/particle.png; sourceTree = "<group>"; };
-		B3BCEB3F1B60603600A863B2 /* particle.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; name = particle.vert; path = ../assets/particle.vert; sourceTree = "<group>"; };
-		B3BCEB401B60603600A863B2 /* reflectiveOcclusion.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = reflectiveOcclusion.png; path = ../assets/reflectiveOcclusion.png; sourceTree = "<group>"; };
-		B3E14E511B4B10CB00142F77 /* Render.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Render.cpp; path = ../src/Render.cpp; sourceTree = "<group>"; };
-		B3E14E541B4B10F300142F77 /* Render.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Render.h; path = ../include/Render.h; sourceTree = "<group>"; };
-		DEE8E1602D094B0092CE5EEC /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
+		5ABED2EC5288423E95D1CB79 /* Resources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
+		8D1107320486CEB800E47090 /* HodginParticles.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HodginParticles.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A05D42C03D584918BD615963 /* HodginParticlesApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; name = HodginParticlesApp.cpp; path = ../src/HodginParticlesApp.cpp; sourceTree = "<group>"; };
+		A0B00005E8EB43B78CCF2E63 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
+		A9B1A9531B7F4C228F655F2E /* HodginParticles_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = HodginParticles_Prefix.pch; sourceTree = "<group>"; };
+		B321C95D1CE67F7D00CEAA8B /* Particle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Particle.cpp; path = ../src/Particle.cpp; sourceTree = "<group>"; };
+		B321C95E1CE67F7D00CEAA8B /* ParticleController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ParticleController.cpp; path = ../src/ParticleController.cpp; sourceTree = "<group>"; };
+		B321C95F1CE67F7D00CEAA8B /* Render.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Render.cpp; path = ../src/Render.cpp; sourceTree = "<group>"; };
+		B321C9631CE67F8C00CEAA8B /* Particle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Particle.h; path = ../include/Particle.h; sourceTree = "<group>"; };
+		B321C9641CE67F8C00CEAA8B /* ParticleController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ParticleController.h; path = ../include/ParticleController.h; sourceTree = "<group>"; };
+		B321C9651CE67F8C00CEAA8B /* Render.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Render.h; path = ../include/Render.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,10 +85,10 @@
 		080E96DDFE201D6D7F000001 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				2C9EA6F60E5945B0AE29DF53 /* HodginParticlesReduxApp.cpp */,
-				B30C0AE21B45BEDA00EEAE4B /* Particle.cpp */,
-				B30C0AE31B45BEDA00EEAE4B /* ParticleController.cpp */,
-				B3E14E511B4B10CB00142F77 /* Render.cpp */,
+				A05D42C03D584918BD615963 /* HodginParticlesApp.cpp */,
+				B321C95D1CE67F7D00CEAA8B /* Particle.cpp */,
+				B321C95E1CE67F7D00CEAA8B /* ParticleController.cpp */,
+				B321C95F1CE67F7D00CEAA8B /* Render.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -133,12 +123,12 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D1107320486CEB800E47090 /* HodginParticlesRedux.app */,
+				8D1107320486CEB800E47090 /* HodginParticles.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		29B97314FDCFA39411CA2CEA /* HodginParticlesRedux */ = {
+		29B97314FDCFA39411CA2CEA /* HodginParticles */ = {
 			isa = PBXGroup;
 			children = (
 				01B97315FEAEA392516A2CEA /* Blocks */,
@@ -148,17 +138,17 @@
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
-			name = HodginParticlesRedux;
+			name = HodginParticles;
 			sourceTree = "<group>";
 		};
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
-				8DF03B300EB24988A6278D19 /* HodginParticlesRedux_Prefix.pch */,
-				02BD21589AE444B2BF9306A2 /* Resources.h */,
-				B30C0ADE1B45BECB00EEAE4B /* Particle.h */,
-				B30C0ADF1B45BECB00EEAE4B /* ParticleController.h */,
-				B3E14E541B4B10F300142F77 /* Render.h */,
+				5ABED2EC5288423E95D1CB79 /* Resources.h */,
+				B321C9631CE67F8C00CEAA8B /* Particle.h */,
+				B321C9641CE67F8C00CEAA8B /* ParticleController.h */,
+				B321C9651CE67F8C00CEAA8B /* Render.h */,
+				A9B1A9531B7F4C228F655F2E /* HodginParticles_Prefix.pch */,
 			);
 			name = Headers;
 			sourceTree = "<group>";
@@ -166,18 +156,8 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B3BCEB371B60603600A863B2 /* ambientOcclusion.png */,
-				B3BCEB381B60603600A863B2 /* diffuse.png */,
-				B3BCEB391B60603600A863B2 /* emitter.frag */,
-				B3BCEB3A1B60603600A863B2 /* emitter.vert */,
-				B3BCEB3B1B60603600A863B2 /* height.png */,
-				B3BCEB3C1B60603600A863B2 /* normal.png */,
-				B3BCEB3D1B60603600A863B2 /* particle.frag */,
-				B3BCEB3E1B60603600A863B2 /* particle.png */,
-				B3BCEB3F1B60603600A863B2 /* particle.vert */,
-				B3BCEB401B60603600A863B2 /* reflectiveOcclusion.png */,
-				927082604F2447068E382EE9 /* Info.plist */,
-				DEE8E1602D094B0092CE5EEC /* CinderApp.icns */,
+				A0B00005E8EB43B78CCF2E63 /* CinderApp.icns */,
+				4B613412C26D4066B433933D /* Info.plist */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -194,9 +174,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8D1107260486CEB800E47090 /* HodginParticlesRedux */ = {
+		8D1107260486CEB800E47090 /* HodginParticles */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "HodginParticlesRedux" */;
+			buildConfigurationList = C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "HodginParticles" */;
 			buildPhases = (
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
@@ -206,10 +186,10 @@
 			);
 			dependencies = (
 			);
-			name = HodginParticlesRedux;
+			name = HodginParticles;
 			productInstallPath = "$(HOME)/Applications";
-			productName = HodginParticlesRedux;
-			productReference = 8D1107320486CEB800E47090 /* HodginParticlesRedux.app */;
+			productName = HodginParticles;
+			productReference = 8D1107320486CEB800E47090 /* HodginParticles.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -219,7 +199,7 @@
 			isa = PBXProject;
 			attributes = {
 			};
-			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "HodginParticlesRedux" */;
+			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "HodginParticles" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
@@ -229,11 +209,11 @@
 				French,
 				German,
 			);
-			mainGroup = 29B97314FDCFA39411CA2CEA /* HodginParticlesRedux */;
+			mainGroup = 29B97314FDCFA39411CA2CEA /* HodginParticles */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8D1107260486CEB800E47090 /* HodginParticlesRedux */,
+				8D1107260486CEB800E47090 /* HodginParticles */,
 			);
 		};
 /* End PBXProject section */
@@ -243,7 +223,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C231FAC59BCC4016B1A4BAD3 /* CinderApp.icns in Resources */,
+				E4CE9587F829434D8A0AE9A9 /* CinderApp.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,10 +234,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B30C0AE71B45BEDA00EEAE4B /* ParticleController.cpp in Sources */,
-				B30C0AE61B45BEDA00EEAE4B /* Particle.cpp in Sources */,
-				B3E14E531B4B10CB00142F77 /* Render.cpp in Sources */,
-				BCE13100816F42B6B4BC59E8 /* HodginParticlesReduxApp.cpp in Sources */,
+				B321C9611CE67F7D00CEAA8B /* ParticleController.cpp in Sources */,
+				B9005E7180C846B6B30D8497 /* HodginParticlesApp.cpp in Sources */,
+				B321C9601CE67F7D00CEAA8B /* Particle.cpp in Sources */,
+				B321C9621CE67F7D00CEAA8B /* Render.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,7 +254,7 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = HodginParticlesRedux_Prefix.pch;
+				GCC_PREFIX_HEADER = HodginParticles_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -283,7 +263,8 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				OTHER_LDFLAGS = "\"$(CINDER_PATH)/lib/libcinder_d.a\"";
-				PRODUCT_NAME = HodginParticlesRedux;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.libcinder.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = HodginParticles;
 				SYMROOT = ./build;
 				WRAPPER_EXTENSION = app;
 			};
@@ -300,7 +281,7 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = HodginParticlesRedux_Prefix.pch;
+				GCC_PREFIX_HEADER = HodginParticles_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"NDEBUG=1",
 					"$(inherited)",
@@ -309,7 +290,8 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				OTHER_LDFLAGS = "\"$(CINDER_PATH)/lib/libcinder.a\"";
-				PRODUCT_NAME = HodginParticlesRedux;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.libcinder.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = HodginParticles;
 				STRIP_INSTALLED_PRODUCT = YES;
 				SYMROOT = ./build;
 				WRAPPER_EXTENSION = app;
@@ -320,14 +302,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
-				CINDER_PATH = ../../../../CG/LoneStar/deps/Cinder;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CINDER_PATH = ../../..;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libc++";
+				ENABLE_TESTABILITY = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\"";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
 			};
@@ -337,9 +320,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
-				CINDER_PATH = ../../../../CG/LoneStar/deps/Cinder;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CINDER_PATH = ../../..;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -353,7 +335,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "HodginParticlesRedux" */ = {
+		C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "HodginParticles" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4B08A954540054247B /* Debug */,
@@ -362,7 +344,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C01FCF4E08A954540054247B /* Build configuration list for PBXProject "HodginParticlesRedux" */ = {
+		C01FCF4E08A954540054247B /* Build configuration list for PBXProject "HodginParticles" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,

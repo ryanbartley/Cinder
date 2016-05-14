@@ -14,10 +14,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\HodginParticlesReduxApp.cpp">
+    <ClCompile Include="..\src\HodginParticlesApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\HodginParticlesReduxApp.cpp">
+    <ClCompile Include="..\src\HodginParticlesApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClInclude Include="..\include\Resources.h">

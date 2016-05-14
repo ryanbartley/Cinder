@@ -13,7 +13,7 @@ using namespace ci::app;
 #include <sstream>
 using std::list;
 
-class HodginParticlesReduxApp : public App {
+class HodginParticlesApp : public App {
  public:
 	void resize() override;
 	void setup() override;
@@ -37,7 +37,7 @@ class HodginParticlesReduxApp : public App {
 	params::InterfaceGlRef mParams;
 };
 
-void HodginParticlesReduxApp::setup()
+void HodginParticlesApp::setup()
 {
 	mMouseDown			= false;
 	mMousePos			= getWindowCenter();
@@ -54,39 +54,39 @@ void HodginParticlesReduxApp::setup()
 }
 
 
-void HodginParticlesReduxApp::resize()
+void HodginParticlesApp::resize()
 {
 	mParticleController.createConstraints( vec2( getWindowWidth(), getWindowHeight() ) );
 }
 
-void HodginParticlesReduxApp::keyDown( KeyEvent event )
+void HodginParticlesApp::keyDown( KeyEvent event )
 {
 	if( event.getChar() == 'f' || event.getChar() == 'F' ){
 		setFullScreen( ! isFullScreen() );
 	}
 }
 
-void HodginParticlesReduxApp::mouseMove( MouseEvent event )
+void HodginParticlesApp::mouseMove( MouseEvent event )
 {
 	mMousePos = event.getPos();
 }
 
-void HodginParticlesReduxApp::mouseDrag( MouseEvent event )
+void HodginParticlesApp::mouseDrag( MouseEvent event )
 {
 	mouseMove( event );
 }
 
-void HodginParticlesReduxApp::mouseDown( MouseEvent event )
+void HodginParticlesApp::mouseDown( MouseEvent event )
 {
 	mMouseDown = true;
 }
 
-void HodginParticlesReduxApp::mouseUp( MouseEvent event )
+void HodginParticlesApp::mouseUp( MouseEvent event )
 {
 	mMouseDown = false;
 }
 
-void HodginParticlesReduxApp::update()
+void HodginParticlesApp::update()
 {
 	Ray ray = mCamera.generateRay( mMousePos, getWindowSize() );
 	mParticleController.update( ray, mMouseDown );
@@ -95,7 +95,7 @@ void HodginParticlesReduxApp::update()
 }
 
 
-void HodginParticlesReduxApp::draw()
+void HodginParticlesApp::draw()
 {
 	gl::clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	gl::setMatrices( mCamera );
@@ -107,9 +107,9 @@ void HodginParticlesReduxApp::draw()
 	getWindow()->setTitle( to_string( getAverageFps() ) );
 }
 
-void HodginParticlesReduxApp::setupParams()
+void HodginParticlesApp::setupParams()
 {
-	mParams = params::InterfaceGl::create( "Hodgin Particles Redux", ci::ivec2( 400 ) );
+	mParams = params::InterfaceGl::create( "Hodgin Particles ", ci::ivec2( 400 ) );
 	
 	mParams->addParam( "Enable Perlin", &mParticleController.mEnablePerlin );
 	mParams->addParam( "Enable Gravity", &mParticleController.mEnableGravity );
@@ -121,7 +121,7 @@ void HodginParticlesReduxApp::setupParams()
 }
 
 
-CINDER_APP( HodginParticlesReduxApp, RendererGl, []( App::Settings *settings ) {
+CINDER_APP( HodginParticlesApp, RendererGl, []( App::Settings *settings ) {
 	settings->setWindowSize( 1280, 720 );
 	settings->setFrameRate( 60.0f );
 	settings->setFullScreen( false );

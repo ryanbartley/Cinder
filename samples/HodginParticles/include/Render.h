@@ -9,7 +9,7 @@
 #include "cinder/gl/gl.h"
 
 const uint32_t MAX_PARTICLES = 10000;
-const uint32_t MAX_TAIL_VERTICES_PER_PARTICLE = 20;
+const uint32_t MAX_TAIL_VERTICES_PER_PARTICLE = 26;
 const uint32_t PRIMITIVE_RESTART_INDEX = std::numeric_limits<uint32_t>::max();
 
 struct ParticleLayout {

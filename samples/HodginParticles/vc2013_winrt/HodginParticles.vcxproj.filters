@@ -23,10 +23,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\HodginParticlesReduxApp.cpp">
+    <ClCompile Include="..\src\HodginParticlesApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\HodginParticlesReduxApp.cpp">
+    <ClCompile Include="..\src\HodginParticlesApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClInclude Include="..\include\Resources.h">
@@ -39,16 +39,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\CG\LoneStar\deps\Cinder\lib\winrt\x86\libEGL.dll">
+    <None Include="..\..\..\lib\winrt\x86\libEGL.dll">
       <Filter>ANGLE\Win32</Filter>
     </None>
-    <None Include="..\..\..\..\CG\LoneStar\deps\Cinder\lib\winrt\x86\libGLESv2.dll">
+    <None Include="..\..\..\lib\winrt\x86\libGLESv2.dll">
       <Filter>ANGLE\Win32</Filter>
     </None>
-    <None Include="..\..\..\..\CG\LoneStar\deps\Cinder\lib\winrt\x64\libEGL.dll">
+    <None Include="..\..\..\lib\winrt\x64\libEGL.dll">
       <Filter>ANGLE\x64</Filter>
     </None>
-    <None Include="..\..\..\..\CG\LoneStar\deps\Cinder\lib\winrt\x64\libGLESv2.dll">
+    <None Include="..\..\..\lib\winrt\x64\libGLESv2.dll">
       <Filter>ANGLE\x64</Filter>
     </None>
   </ItemGroup>

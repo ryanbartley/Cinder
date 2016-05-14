@@ -135,16 +135,14 @@ void ParticleController::updateParticles()
 			applyParticleConstraints( *particleIt );
 		}
 		
-		particleIt->move();
 		particleIt->update();
-		particleIt->finish();
 		
 		if( mRenderParticles ) {
 			// First capture alive particles
-			auto particleVert = particleVertexIt++;
-			particleVert->position = particleIt->mLoc[0];
-			particleVert->color = particleIt->mColor;
-			particleVert->radius = particleIt->getHeatedRadius( mEmitterHeat );
+			particleVertexIt->position = particleIt->mCurrentLoc;
+			particleVertexIt->color = particleIt->mColor;
+			particleVertexIt->radius = particleIt->getHeatedRadius( mEmitterHeat );
+			++particleVertexIt;
 		}
 		
 		if( mRenderTrails ) {
@@ -154,28 +152,32 @@ void ParticleController::updateParticles()
 			auto age = particleIt->mAgePer;
 			
 			int numTailVerts = 0;
-			for( int i = 0; i < (locations.size()) - 2 && numTailVerts <= MAX_TAIL_VERTICES_PER_PARTICLE; i++ ){
-				float per	= i / (float)(locations.size()-1);
+			float size = locations.size() - 1;
+			ci::vec3 lastPoint = particleIt->mCurrentLoc;
+			
+			for( int i = 0, end = size; i < end; i++ ){
+				float per = i / size;
 				
-				ci::vec3 perp0	= ci::vec3( locations[i].x, locations[i].y, 0.0f ) -
-				ci::vec3( locations[i+1].x, locations[i+1].y, 0.0f );
-				ci::vec3 perp1	= cross( perp0, ci::vec3( 0, 0, 1 ) );
-				ci::vec3 perp2	= cross( perp0, perp1 );
-				perp1			= normalize( cross( perp0, perp2 ) );
+				auto nextPoint = locations[i];
 				
-				ci::vec3 off	= perp1 * ( radius * ( 1.0f - per ) * 0.25f  );
+				auto dir = normalize( nextPoint - lastPoint );
+				ci::vec3 perp0( dir.y, -dir.x, 0 );
+				
+				ci::vec3 off = perp0 * ( radius * ( 1.0f - per ) * 0.25f  );
 				
 				auto tailColor = ColorA( ( 1.0f - per ) * 0.75f, 0.15f, per * 0.5f, ( 1.0f - per ) * age * 0.25f );
 				
-				auto tailVert0 = particleTailIt++;
-				tailVert0->position = locations[i] - off;
-				tailVert0->color = tailColor;
+				particleTailIt->position = lastPoint - off;
+				particleTailIt->color = tailColor;
+				++particleTailIt;
 				++numTailVerts;
 				
-				auto tailVert1 = particleTailIt++;
-				tailVert1->position = locations[i] + off;
-				tailVert1->color = tailColor;
-				numTailVerts += 2;
+				particleTailIt->position = lastPoint + off;
+				particleTailIt->color = tailColor;
+				++particleTailIt;
+				++numTailVerts;
+				
+				lastPoint = nextPoint;
 			}
 		}
 		
@@ -204,7 +206,6 @@ void ParticleController::addParticles( int amt, vec3 loc, vec3 vel, float heat, 
 void ParticleController::render()
 {
 	mEmitterRender->renderEmitter( *this );
-	gl::ScopedDepth scopeDepth( true, false );
 	if( mRenderParticles )
 		mParticleRender->renderParticles();
 	if( mRenderTrails )

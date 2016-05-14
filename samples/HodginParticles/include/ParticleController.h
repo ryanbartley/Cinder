@@ -47,7 +47,7 @@ class ParticleController {
 	ci::vec2		mEasedPosition;
 	
 	// Perlin info
-	ci::Perlin	mPerlin				= ci::Perlin(3);
+	ci::Perlin	mPerlin				= ci::Perlin(10);
 	float		mPerlinMagnitude	= 0.5f;
 	// Gravity info
 	ci::vec3	mGravitationalAxis	= ci::vec3( 0, 0.1, 0 );
@@ -70,8 +70,9 @@ void ParticleController::applyPerlin( Particle &particle )
 {
 	auto counter = ci::app::getElapsedFrames();
 	// Perlin Calculation
-	ci::vec3 noise = mPerlin.dfBm( particle.mLoc[0] * 0.01f +
-								  ci::vec3( 0, 0, counter / 100.0f ) );
+	auto noisePos = ( particle.mLoc[0] * 0.01f +
+					 ci::vec3( 0, 0, counter / 100.0f ) );
+	ci::vec3 noise = mPerlin.dnoise( noisePos.x, noisePos.y, noisePos.z );
 	noise = normalize( noise );
 	noise *= mPerlinMagnitude;
 	particle.mAcc += ci::vec3( noise.x, noise.y, noise.z );

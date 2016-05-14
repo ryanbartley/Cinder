@@ -12,9 +12,7 @@ class Particle {
  public:
 	Particle( ci::vec3 aLoc, ci::vec3 aVel );
 	
-	inline void move();
 	inline void update();
-	inline void finish() { mIsBouncing = false; }
 	
 	inline float getHeatedRadius( float heat )
 	{
@@ -25,6 +23,7 @@ class Particle {
 	}
 	
 	std::vector<ci::vec3> mLoc;
+	ci::vec3	mCurrentLoc;
 	ci::ColorA	mColor;
 	ci::vec3	mVel;
 	ci::vec3	mAcc;
@@ -45,21 +44,18 @@ class Particle {
 	bool		mIsDead;
 };
 
-void Particle::move()
+
+void Particle::update()
 {
-	if( mVel != ci::vec3() )
-		mVel += mAcc;
+	mVel += mAcc;
 	
 	for( int i=mLen-1; i>0; i-- ) {
 		mLoc[i] = mLoc[i-1];
 	}
+	mLoc[0] = mCurrentLoc;
 	
-	mLoc[0] += mVel;
-}
-
-
-void Particle::update()
-{
+	mCurrentLoc += mVel;
+	
 	mVel *= 0.975f;
 	mAcc = ci::vec3();
 	
@@ -75,4 +71,5 @@ void Particle::update()
 	} else {
 		mColor = ci::ColorA( mAgePer, mAgePer * 0.75f, 1.0f - mAgePer + 0.15f, mAgePer + ci::Rand::randFloat( 0.5f ) );
 	}
+	mIsBouncing = false;
 }
