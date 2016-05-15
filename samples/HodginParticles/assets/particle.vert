@@ -14,7 +14,7 @@ uniform float uScreenSize = 1000.0;
 void main() {
 	vec4 eyePos = ciModelView * vec4( position, 1.0 );
 	
-	gl_PointSize = 10;
+	gl_PointSize = radius;
 	gl_Position = ciProjectionMatrix * eyePos;
 	vColor = color;
 }

@@ -79,6 +79,30 @@ void ParticleRender::renderTrails()
 	mTailBatch->draw( 0, mNumActiveParticles * (MAX_TAIL_VERTICES_PER_PARTICLE + 1) );
 }
 
+ParticleLayout* ParticleRender::mapParticles( uint32_t numActiveParticles )
+{
+	mNumActiveParticles = numActiveParticles;
+	auto ret = mParticleBuffer->mapBufferRange( 0, sizeof(ParticleLayout) * mNumActiveParticles, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+	return static_cast<ParticleLayout*>(ret);
+}
+
+ParticleTailLayout* ParticleRender::mapParticleTails( uint32_t numActiveParticles )
+{
+	mNumActiveParticles = numActiveParticles;
+	auto ret = mTailBuffer->mapBufferRange( 0, sizeof(ParticleTailLayout) * MAX_TAIL_VERTICES_PER_PARTICLE * mNumActiveParticles, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+	return static_cast<ParticleTailLayout*>(ret);
+}
+
+void ParticleRender::unmapParticles()
+{
+	mParticleBuffer->unmap();
+}
+
+void ParticleRender::unmapParticleTails()
+{
+	mTailBuffer->unmap();
+}
+
 void ParticleRender::bufferParticles( uint32_t numActiveParticles, const std::vector<ParticleLayout> &activeParticles )
 {
 	mNumActiveParticles = numActiveParticles;

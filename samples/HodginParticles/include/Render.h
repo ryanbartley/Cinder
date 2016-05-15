@@ -6,9 +6,11 @@
 //
 //
 
+#pragma once
+
 #include "cinder/gl/gl.h"
 
-const uint32_t MAX_PARTICLES = 10000;
+const uint32_t MAX_PARTICLES = 20000;
 const uint32_t MAX_TAIL_VERTICES_PER_PARTICLE = 26;
 const uint32_t PRIMITIVE_RESTART_INDEX = std::numeric_limits<uint32_t>::max();
 
@@ -31,6 +33,11 @@ public:
 	void setup();
 	void renderParticles();
 	void renderTrails();
+	
+	ParticleLayout* mapParticles( uint32_t numActiveParticles );
+	void unmapParticles();
+	ParticleTailLayout* mapParticleTails( uint32_t numActiveParticles );
+	void unmapParticleTails();
 	
 	void bufferParticles( uint32_t numActiveParticles, const std::vector<ParticleLayout> &activeParticles );
 	void bufferParticleTails( uint32_t numActiveParticles, const std::vector<ParticleTailLayout> &particleTails );

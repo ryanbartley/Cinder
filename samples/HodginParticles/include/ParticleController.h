@@ -1,8 +1,8 @@
 
 #pragma once
-#include "Particle.h"
 #include "cinder/gl/Texture.h"
 #include "cinder/Perlin.h"
+#include "cinder/Rand.h"
 #include <list>
 #include <vector>
 
@@ -11,6 +11,8 @@ class ParticleRender;
 class EmitterRender;
 class RoomRender;
 
+const uint32_t PARTICLE_HISTORY_LEN = 14;
+
 struct Constraint {
 	ci::vec3	mNormal;
 	float		mMinValue, mMaxValue;
@@ -18,8 +20,29 @@ struct Constraint {
 
 class ParticleController {
   public:
-	
 	ParticleController();
+	
+	struct Particle {
+		Particle( ci::vec3 aLoc, ci::vec3 aVel );
+		
+		std::array<ci::vec3, PARTICLE_HISTORY_LEN> mLoc;
+		ci::vec3	mCurrentLoc;
+		ci::vec3	mVel;
+		ci::vec3	mAcc;
+		
+		ci::ColorA	mColor;
+		
+		float		mLifeSpanInc;
+		float		mAgePer;
+		
+		float		mRadius;
+		float		mMass;
+		float		mInvMass;
+		
+		bool		mIsBouncing;
+		bool		mIsDying;
+	};
+	
 	void setup();
 	void update( const ci::Ray &ray, bool mouseDown );
 	void updateEmitter( const ci::Ray &ray, bool mouseDown );
@@ -58,6 +81,8 @@ class ParticleController {
 	EmitterRender*	mEmitterRender;
 	ParticleRender*	mParticleRender;
 	RoomRender*		mRoomRender;
+	
+	std::array<ci::ColorA, 15> tailColors;
 	
 	// Assorted Flags
 	bool		mEnableConstraints, mEnableGravity,
