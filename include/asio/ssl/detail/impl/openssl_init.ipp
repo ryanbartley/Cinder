@@ -36,7 +36,7 @@ public:
   do_init()
   {
     ::SSL_library_init();
-    ::SSL_load_error_strings();        
+	::SSL_load_error_strings();
     ::OpenSSL_add_all_algorithms();
 
     mutexes_.resize(::CRYPTO_num_locks());
@@ -66,7 +66,9 @@ public:
     ::ERR_remove_state(0);
     ::EVP_cleanup();
     ::CRYPTO_cleanup_all_ex_data();
+#if !defined(OPENSSL_IS_BORINGSSL)
     ::CONF_modules_unload(1);
+#endif // defined(OPENSSL_IS_BORINGSSL)
 #if !defined(OPENSSL_NO_ENGINE)
     ::ENGINE_cleanup();
 #endif // !defined(OPENSSL_NO_ENGINE)
