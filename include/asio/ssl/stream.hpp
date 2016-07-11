@@ -51,9 +51,9 @@ namespace ssl {
  * @par Example
  * To use the SSL stream template with an ip::tcp::socket, you would write:
  * @code
- * asio::io_service io_service;
+ * asio::io_context io_context;
  * asio::ssl::context ctx(asio::ssl::context::sslv23);
- * asio::ssl::stream<asio:ip::tcp::socket> sock(io_service, ctx);
+ * asio::ssl::stream<asio:ip::tcp::socket> sock(io_context, ctx);
  * @endcode
  *
  * @par Concepts:
@@ -79,6 +79,9 @@ public:
 
   /// The type of the lowest layer.
   typedef typename next_layer_type::lowest_layer_type lowest_layer_type;
+
+  /// The type of the executor associated with the object.
+  typedef typename lowest_layer_type::executor_type executor_type;
 
 #if defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
   /// Construct a stream.
@@ -108,22 +111,41 @@ public:
 #endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
 
   /// Destructor.
+  /**
+   * @note A @c stream object must not be destroyed while there are pending
+   * asynchronous operations associated with it.
+   */
   ~stream()
   {
   }
 
-  /// Get the io_service associated with the object.
+  /// Get the executor associated with the object.
   /**
-   * This function may be used to obtain the io_service object that the stream
+   * This function may be used to obtain the executor object that the stream
    * uses to dispatch handlers for asynchronous operations.
    *
-   * @return A reference to the io_service object that stream will use to
-   * dispatch handlers. Ownership is not transferred to the caller.
+   * @return A copy of the executor that stream will use to dispatch handlers.
    */
-  asio::io_service& get_io_service()
+  executor_type get_executor() ASIO_NOEXCEPT
+  {
+    return next_layer_.lowest_layer().get_executor();
+  }
+
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use get_executor().) Get the io_context associated with the
+  /// object.
+  asio::io_context& get_io_context()
+  {
+    return next_layer_.lowest_layer().get_io_context();
+  }
+
+  /// (Deprecated: Use get_executor().) Get the io_context associated with the
+  /// object.
+  asio::io_context& get_io_service()
   {
     return next_layer_.lowest_layer().get_io_service();
   }
+#endif // !defined(ASIO_NO_DEPRECATED)
 
   /// Get the underlying implementation in the native type.
   /**
@@ -136,7 +158,7 @@ public:
    * suitable for passing to functions such as @c SSL_get_verify_result and
    * @c SSL_get_peer_certificate:
    * @code
-   * asio::ssl::stream<asio:ip::tcp::socket> sock(io_service, ctx);
+   * asio::ssl::stream<asio:ip::tcp::socket> sock(io_context, ctx);
    *
    * // ... establish connection and perform handshake ...
    *

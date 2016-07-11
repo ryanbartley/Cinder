@@ -67,6 +67,7 @@ public:
 
     mutex mutex_;
     int descriptor_;
+    int num_kevents_; // 1 == read only, 2 == read and write
     op_queue<reactor_op> op_queue_[max_ops];
     bool shutdown_;
   };
@@ -81,10 +82,10 @@ public:
   ASIO_DECL ~kqueue_reactor();
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown_service();
+  ASIO_DECL void shutdown();
 
   // Recreate internal descriptors following a fork.
-  ASIO_DECL void fork_service(
+  ASIO_DECL void notify_fork(
       asio::execution_context::fork_event fork_ev);
 
   // Initialise the task.

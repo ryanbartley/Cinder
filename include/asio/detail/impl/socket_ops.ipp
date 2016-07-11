@@ -1633,7 +1633,8 @@ int getpeername(socket_type s, socket_addr_type* addr,
     return socket_error_retval;
   }
 
-#if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
+#if defined(ASIO_WINDOWS) && !defined(ASIO_WINDOWS_APP) \
+  || defined(__CYGWIN__)
   if (cached)
   {
     // Check if socket is still connected.
@@ -1654,9 +1655,11 @@ int getpeername(socket_type s, socket_addr_type* addr,
     ec = asio::error_code();
     return 0;
   }
-#else // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
+#else // defined(ASIO_WINDOWS) && !defined(ASIO_WINDOWS_APP)
+      // || defined(__CYGWIN__)
   (void)cached;
-#endif // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
+#endif // defined(ASIO_WINDOWS) && !defined(ASIO_WINDOWS_APP)
+       // || defined(__CYGWIN__)
 
   clear_last_error();
   int result = error_wrapper(call_getpeername(
@@ -2272,14 +2275,34 @@ int inet_pton(int af, const char* src, void* dest,
 
   return result == socket_error_retval ? -1 : 1;
 #else // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
-  int result = error_wrapper(::inet_pton(af, src, dest), ec);
+  using namespace std; // For strchr, memcpy and atoi.
+
+  // On some platforms, inet_pton fails if an address string contains a scope
+  // id. Detect and remove the scope id before passing the string to inet_pton.
+  const bool is_v6 = (af == ASIO_OS_DEF(AF_INET6));
+  const char* if_name = is_v6 ? strchr(src, '%') : 0;
+  char src_buf[max_addr_v6_str_len + 1];
+  const char* src_ptr = src;
+  if (if_name != 0)
+  {
+    if (if_name - src > max_addr_v6_str_len)
+    {
+      ec = asio::error::invalid_argument;
+      return 0;
+    }
+    memcpy(src_buf, src, if_name - src);
+    src_buf[if_name - src] = 0;
+    src_ptr = src_buf;
+  }
+
+  int result = error_wrapper(::inet_pton(af, src_ptr, dest), ec);
   if (result <= 0 && !ec)
     ec = asio::error::invalid_argument;
-  if (result > 0 && af == ASIO_OS_DEF(AF_INET6) && scope_id)
+  if (result > 0 && is_v6 && scope_id)
   {
     using namespace std; // For strchr and atoi.
     *scope_id = 0;
-    if (const char* if_name = strchr(src, '%'))
+    if (if_name != 0)
     {
       in6_addr_type* ipv6_address = static_cast<in6_addr_type*>(dest);
       bool is_link_local = ((ipv6_address->s6_addr[0] == 0xfe)
@@ -2601,7 +2624,8 @@ inline void gai_strcpy(char* target, const char* source, std::size_t max_size)
   strcpy_s(target, max_size, source);
 #else // defined(ASIO_HAS_SECURE_RTL)
   *target = 0;
-  strncat(target, source, max_size);
+  if (max_size > 0)
+    strncat(target, source, max_size - 1);
 #endif // defined(ASIO_HAS_SECURE_RTL)
 }
 
@@ -3424,8 +3448,8 @@ u_short_type network_to_host_short(u_short_type value)
 {
 #if defined(ASIO_WINDOWS_RUNTIME)
   unsigned char* value_p = reinterpret_cast<unsigned char*>(&value);
-  u_short_type result = (static_cast<u_long_type>(value_p[0]) << 8)
-    | static_cast<u_long_type>(value_p[1]);
+  u_short_type result = (static_cast<u_short_type>(value_p[0]) << 8)
+    | static_cast<u_short_type>(value_p[1]);
   return result;
 #else // defined(ASIO_WINDOWS_RUNTIME)
   return ntohs(value);
@@ -3435,7 +3459,7 @@ u_short_type network_to_host_short(u_short_type value)
 u_short_type host_to_network_short(u_short_type value)
 {
 #if defined(ASIO_WINDOWS_RUNTIME)
-  u_long_type result;
+  u_short_type result;
   unsigned char* result_p = reinterpret_cast<unsigned char*>(&result);
   result_p[0] = static_cast<unsigned char>((value >> 8) & 0xFF);
   result_p[1] = static_cast<unsigned char>(value & 0xFF);

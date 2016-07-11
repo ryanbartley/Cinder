@@ -59,10 +59,10 @@ public:
   ASIO_DECL ~dev_poll_reactor();
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown_service();
+  ASIO_DECL void shutdown();
 
   // Recreate internal descriptors following a fork.
-  ASIO_DECL void fork_service(
+  ASIO_DECL void notify_fork(
       asio::execution_context::fork_event fork_ev);
 
   // Initialise the task.
@@ -165,10 +165,6 @@ private:
   // acquire the dev_poll_reactor's mutex.
   ASIO_DECL void cancel_ops_unlocked(socket_type descriptor,
       const asio::error_code& ec);
-
-  // Helper class used to reregister descriptors after a fork.
-  class fork_helper;
-  friend class fork_helper;
 
   // Add a pending event entry for the given descriptor.
   ASIO_DECL ::pollfd& add_pending_event_change(int descriptor);

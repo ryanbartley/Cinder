@@ -19,7 +19,7 @@
 #include "asio/detail/config.hpp"
 #include <string>
 #include "asio/error_code.hpp"
-#include "asio/ip/address_range_v4.hpp"
+#include "asio/ip/address_v4_range.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -106,17 +106,17 @@ public:
   /// Obtain an address object that represents the network address.
   address_v4 network() const ASIO_NOEXCEPT
   {
-    return address_v4(address_.to_ulong() & netmask().to_ulong());
+    return address_v4(address_.to_uint() & netmask().to_uint());
   }
 
   /// Obtain an address object that represents the network's broadcast address.
   address_v4 broadcast() const ASIO_NOEXCEPT
   {
-    return address_v4::broadcast(network(), netmask());
+    return address_v4(network().to_uint() | (netmask().to_uint() ^ 0xFFFFFFFF));
   }
 
   /// Obtain an address range corresponding to the hosts in the network.
-  ASIO_DECL address_range_v4 hosts() const ASIO_NOEXCEPT;
+  ASIO_DECL address_v4_range hosts() const ASIO_NOEXCEPT;
 
   /// Obtain the true network address, omitting any host bits.
   network_v4 canonical() const ASIO_NOEXCEPT

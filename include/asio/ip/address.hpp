@@ -17,6 +17,7 @@
 
 #include "asio/detail/config.hpp"
 #include <string>
+#include "asio/detail/throw_exception.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error_code.hpp"
 #include "asio/ip/address_v4.hpp"
@@ -89,21 +90,19 @@ public:
     return type_ == ipv6;
   }
 
-#if !defined(ASIO_NO_DEPRECATED)
   /// Get the address as an IP version 4 address.
   ASIO_DECL asio::ip::address_v4 to_v4() const;
 
   /// Get the address as an IP version 6 address.
   ASIO_DECL asio::ip::address_v6 to_v6() const;
-#endif // !defined(ASIO_NO_DEPRECATED)
 
-  /// Get the address as a string in dotted decimal format.
+  /// Get the address as a string.
   ASIO_DECL std::string to_string() const;
 
-  /// Get the address as a string in dotted decimal format.
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use other overload.) Get the address as a string.
   ASIO_DECL std::string to_string(asio::error_code& ec) const;
 
-#if !defined(ASIO_NO_DEPRECATED)
   /// (Deprecated: Use make_address().) Create an address from an IPv4 address
   /// string in dotted decimal form, or from an IPv6 address in hexadecimal
   /// notation.
@@ -166,20 +165,8 @@ public:
   }
 
 private:
-  // Helper function to get the underlying IPv4 address.
-  friend asio::ip::address_v4 get_v4_helper(const address& a)
-  {
-    return a.ipv4_address_;
-  }
-
-  // Helper function to get the underlying IPv4 address.
-  friend asio::ip::address_v6 get_v6_helper(const address& a)
-  {
-    return a.ipv6_address_;
-  }
-
   // The type of the address.
-  enum { none, ipv4, ipv6 } type_;
+  enum { ipv4, ipv6 } type_;
 
   // The underlying IPv4 address.
   asio::ip::address_v4 ipv4_address_;
@@ -217,93 +204,6 @@ ASIO_DECL address make_address(const std::string& str);
  */
 ASIO_DECL address make_address(
     const std::string& str, asio::error_code& ec);
-
-/** @defgroup address_cast asio::ip::address_cast
- *
- * @brief The asio::ip::address_cast function is used to convert between
- * address types.
- */
-/*@{*/
-
-/// Cast a version-independent address to itself.
-template <typename T>
-inline T address_cast(const address& addr,
-    typename enable_if<is_same<T, address>::value>::type* = 0)
-{
-  return addr;
-}
-
-/// Cast a version-independent address to an IPv4 address.
-/**
- * @throws bad_address_cast if @c a does not represent an IPv4 address.
- */
-template <typename T>
-inline T address_cast(const address& addr,
-    typename enable_if<is_same<T, address_v4>::value>::type* = 0)
-{
-  if (!addr.is_v4())
-    throw bad_address_cast();
-  return get_v4_helper(addr);
-}
-
-/// Cast a version-independent address to an IPv6 address.
-/**
- * @throws bad_address_cast if @c a does not represent an IPv6 address.
- */
-template <typename T>
-inline T address_cast(const address& addr,
-    typename enable_if<is_same<T, address_v6>::value>::type* = 0)
-{
-  if (!addr.is_v6())
-    throw bad_address_cast();
-  return get_v6_helper(addr);
-}
-
-/// Cast an IPv4 address to a version-independent address.
-template <typename T>
-inline T address_cast(const address_v4& addr,
-    typename enable_if<is_same<T, address>::value>::type* = 0)
-{
-  return address(addr);
-}
-
-/// Cast an IPv4 address to itself.
-template <typename T>
-inline T address_cast(const address_v4& addr,
-    typename enable_if<is_same<T, address_v4>::value>::type* = 0)
-{
-  return addr;
-}
-
-/// Cast from IPv4 to IPV6 address is not permitted.
-template <typename T>
-bad_address_cast address_cast(const address_v4&,
-    typename enable_if<is_same<T, address_v6>::value>::type* = 0)
-  ASIO_DELETED;
-
-/// Cast an IPv6 address to a version-independent address.
-template <typename T>
-inline T address_cast(const address_v6& addr,
-    typename enable_if<is_same<T, address>::value>::type* = 0)
-{
-  return address(addr);
-}
-
-/// Cast an IPv6 address to itself.
-template <typename T>
-inline T address_cast(const address_v6& addr,
-    typename enable_if<is_same<T, address_v6>::value>::type* = 0)
-{
-  return addr;
-}
-
-/// Cast from IPv6 to IPv4 address is not permitted.
-template <typename T>
-bad_address_cast address_cast(const address_v6&,
-    typename enable_if<is_same<T, address_v4>::value>::type* = 0)
-  ASIO_DELETED;
-
-/*@}*/
 
 #if !defined(ASIO_NO_IOSTREAM)
 

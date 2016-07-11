@@ -44,28 +44,14 @@ public:
 
   std::string message(int value) const
   {
-#if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
-    char* msg = 0;
-    DWORD length = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER
-        | FORMAT_MESSAGE_FROM_SYSTEM
-        | FORMAT_MESSAGE_IGNORE_INSERTS, 0, value,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&msg, 0, 0);
-    detail::local_free_on_block_exit local_free_obj(msg);
-    if (length && msg[length - 1] == '\n')
-      msg[--length] = '\0';
-    if (length && msg[length - 1] == '\r')
-      msg[--length] = '\0';
-    if (length)
-      return msg;
-    else
-      return "asio.system error";
-#elif defined(ASIO_WINDOWS_RUNTIME)
+#if defined(ASIO_WINDOWS_RUNTIME) || defined(ASIO_WINDOWS_APP)
     std::wstring wmsg(128, wchar_t());
     for (;;)
     {
       DWORD wlength = ::FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
           | FORMAT_MESSAGE_IGNORE_INSERTS, 0, value,
-          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &wmsg[0], wmsg.size(), 0);
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          &wmsg[0], static_cast<DWORD>(wmsg.size()), 0);
       if (wlength == 0 && ::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
       {
         wmsg.resize(wmsg.size() + wmsg.size() / 2);
@@ -89,7 +75,22 @@ public:
       else
         return "asio.system error";
     }
-#else // defined(ASIO_WINDOWS)
+#elif defined(ASIO_WINDOWS) || defined(__CYGWIN__)
+    char* msg = 0;
+    DWORD length = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER
+        | FORMAT_MESSAGE_FROM_SYSTEM
+        | FORMAT_MESSAGE_IGNORE_INSERTS, 0, value,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&msg, 0, 0);
+    detail::local_free_on_block_exit local_free_obj(msg);
+    if (length && msg[length - 1] == '\n')
+      msg[--length] = '\0';
+    if (length && msg[length - 1] == '\r')
+      msg[--length] = '\0';
+    if (length)
+      return msg;
+    else
+      return "asio.system error";
+#else // defined(ASIO_WINDOWS_DESKTOP) || defined(__CYGWIN__)
 #if !defined(__sun)
     if (value == ECANCELED)
       return "Operation aborted.";
@@ -109,7 +110,7 @@ public:
     char buf[256] = "";
     return strerror_r(value, buf, sizeof(buf));
 #endif
-#endif // defined(ASIO_WINDOWS)
+#endif // defined(ASIO_WINDOWS_DESKTOP) || defined(__CYGWIN__)
   }
 
 #if defined(ASIO_HAS_STD_ERROR_CODE)

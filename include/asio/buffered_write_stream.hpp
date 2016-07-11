@@ -25,7 +25,7 @@
 #include "asio/detail/noncopyable.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
+#include "asio/io_context.hpp"
 #include "asio/write.hpp"
 
 #include "asio/detail/push_options.hpp"
@@ -54,6 +54,9 @@ public:
 
   /// The type of the lowest layer.
   typedef typename next_layer_type::lowest_layer_type lowest_layer_type;
+
+  /// The type of the executor associated with the object.
+  typedef typename lowest_layer_type::executor_type executor_type;
 
 #if defined(GENERATING_DOCUMENTATION)
   /// The default buffer size.
@@ -96,11 +99,27 @@ public:
     return next_layer_.lowest_layer();
   }
 
-  /// Get the io_service associated with the object.
-  asio::io_service& get_io_service()
+  /// Get the executor associated with the object.
+  executor_type get_executor() ASIO_NOEXCEPT
+  {
+    return next_layer_.lowest_layer().get_executor();
+  }
+
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use get_executor().) Get the io_context associated with the
+  /// object.
+  asio::io_context& get_io_context()
+  {
+    return next_layer_.get_io_context();
+  }
+
+  /// (Deprecated: Use get_executor().) Get the io_context associated with the
+  /// object.
+  asio::io_context& get_io_service()
   {
     return next_layer_.get_io_service();
   }
+#endif // !defined(ASIO_NO_DEPRECATED)
 
   /// Close the stream.
   void close()

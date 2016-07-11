@@ -23,7 +23,7 @@
 
 #include <string>
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
+#include "asio/io_context.hpp"
 #include "asio/serial_port_base.hpp"
 #include "asio/detail/descriptor_ops.hpp"
 #include "asio/detail/reactive_descriptor_service.hpp"
@@ -44,10 +44,10 @@ public:
   typedef reactive_descriptor_service::implementation_type implementation_type;
 
   ASIO_DECL reactive_serial_port_service(
-      asio::io_service& io_service);
+      asio::io_context& io_context);
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown_service();
+  ASIO_DECL void shutdown();
 
   // Construct a new serial port implementation.
   void construct(implementation_type& impl)

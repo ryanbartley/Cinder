@@ -427,8 +427,8 @@ asio::error_code context::use_certificate(
   if (format == context_base::asn1)
   {
     if (::SSL_CTX_use_certificate_ASN1(handle_,
-          static_cast<int>(buffer_size(certificate)),
-          buffer_cast<const unsigned char*>(certificate)) == 1)
+          static_cast<int>(certificate.size()),
+          static_cast<const unsigned char*>(certificate.data())) == 1)
     {
       ec = asio::error_code();
       return ec;
@@ -538,9 +538,9 @@ asio::error_code context::use_certificate_chain(
           asio::error::get_ssl_category());
       return ec;
     }
-	  
+
 #if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
-	::SSL_CTX_clear_chain_certs(handle_);
+    ::SSL_CTX_clear_chain_certs(handle_);
 #else
     if (handle_->extra_certs)
     {
@@ -548,7 +548,7 @@ asio::error_code context::use_certificate_chain(
       handle_->extra_certs = 0;
     }
 #endif // (OPENSSL_VERSION_NUMBER >= 0x10002000L)
-	  
+
     while (X509* cacert = ::PEM_read_bio_X509(bio.p, 0,
           handle_->default_passwd_callback,
           handle_->default_passwd_callback_userdata))
@@ -935,7 +935,8 @@ int context::password_callback_function(
     strcpy_s(buf, size, passwd.c_str());
 #else // defined(ASIO_HAS_SECURE_RTL)
     *buf = '\0';
-    strncat(buf, passwd.c_str(), size);
+    if (size > 0)
+      strncat(buf, passwd.c_str(), size - 1);
 #endif // defined(ASIO_HAS_SECURE_RTL)
 
     return static_cast<int>(strlen(buf));
@@ -947,8 +948,8 @@ int context::password_callback_function(
 BIO* context::make_buffer_bio(const const_buffer& b)
 {
   return ::BIO_new_mem_buf(
-      const_cast<void*>(buffer_cast<const void*>(b)),
-      static_cast<int>(buffer_size(b)));
+      const_cast<void*>(b.data()),
+      static_cast<int>(b.size()));
 }
 
 } // namespace ssl

@@ -42,7 +42,11 @@ public:
     reactive_socket_connect_op_base* o(
         static_cast<reactive_socket_connect_op_base*>(base));
 
-    return socket_ops::non_blocking_connect(o->socket_, o->ec_);
+    bool result = socket_ops::non_blocking_connect(o->socket_, o->ec_);
+
+    ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_connect", o->ec_));
+
+    return result;
   }
 
 private:
@@ -73,7 +77,7 @@ public:
     ptr p = { asio::detail::addressof(o->handler_), o, o };
     handler_work<Handler> w(o->handler_);
 
-    ASIO_HANDLER_COMPLETION((o));
+    ASIO_HANDLER_COMPLETION((*o));
 
     // Make a copy of the handler so that the memory can be deallocated before
     // the upcall is made. Even if we're not about to make an upcall, a

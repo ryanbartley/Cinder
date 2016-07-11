@@ -66,6 +66,14 @@ public:
     ::WaitForSingleObject(thread_, INFINITE);
   }
 
+  // Get number of CPUs.
+  static std::size_t hardware_concurrency()
+  {
+    SYSTEM_INFO system_info;
+    ::GetSystemInfo(&system_info);
+    return system_info.dwNumberOfProcessors;
+  }
+
 private:
   friend DWORD WINAPI wince_thread_function(LPVOID arg);
 

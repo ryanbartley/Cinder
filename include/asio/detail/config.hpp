@@ -220,7 +220,12 @@
 #      define ASIO_NOEXCEPT_OR_NOTHROW noexcept(true)
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
-#  endif // defined(__GNUC__)
+#  elif defined(ASIO_MSVC)
+#   if (_MSC_VER >= 1900)
+#    define ASIO_NOEXCEPT noexcept(true)
+#    define ASIO_NOEXCEPT_OR_NOTHROW noexcept(true)
+#   endif // (_MSC_VER >= 1900)
+#  endif // defined(ASIO_MSVC)
 # endif // !defined(ASIO_DISABLE_NOEXCEPT)
 # if !defined(ASIO_NOEXCEPT)
 #  define ASIO_NOEXCEPT
@@ -294,8 +299,7 @@
 #     define ASIO_ERROR_CATEGORY_NOEXCEPT noexcept(true)
 #   endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #  endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
-# endif // defined(__GNUC__)
-# if defined(ASIO_MSVC)
+# elif defined(ASIO_MSVC)
 #  if (_MSC_VER >= 1900)
 #   define ASIO_ERROR_CATEGORY_NOEXCEPT noexcept(true)
 #  endif // (_MSC_VER >= 1900)
@@ -449,6 +453,15 @@
 #  endif // (BOOST_VERSION >= 104700)
 # endif // !defined(ASIO_DISABLE_BOOST_CHRONO)
 #endif // !defined(ASIO_HAS_BOOST_CHRONO)
+
+// Some form of chrono library is available.
+#if !defined(ASIO_HAS_CHRONO)
+# if defined(ASIO_HAS_STD_CHRONO) \
+    || defined(ASIO_HAS_BOOST_CHRONO)
+#  define ASIO_HAS_CHRONO 1
+# endif // defined(ASIO_HAS_STD_CHRONO)
+        // || defined(ASIO_HAS_BOOST_CHRONO)
+#endif // !defined(ASIO_HAS_CHRONO)
 
 // Boost support for the DateTime library.
 #if !defined(ASIO_HAS_BOOST_DATE_TIME)
@@ -662,22 +675,40 @@
 # endif // !defined(ASIO_DISABLE_STD_CALL_ONCE)
 #endif // !defined(ASIO_HAS_STD_CALL_ONCE)
 
-// WinRT target.
-#if !defined(ASIO_WINDOWS_RUNTIME)
-# if defined(__cplusplus_winrt)
+// Windows App target. Windows but with a limited API.
+#if !defined(ASIO_WINDOWS_APP)
+# if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0603)
 #  include <winapifamily.h>
-#  if WINAPI_FAMILY_ONE_PARTITION(WINAPI_FAMILY, WINAPI_PARTITION_APP)
-#   define ASIO_WINDOWS_RUNTIME 1
-#  endif // WINAPI_FAMILY_ONE_PARTITION(WINAPI_FAMILY, WINAPI_PARTITION_APP)
-# endif // defined(__cplusplus_winrt)
+#  if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) \
+   && !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#   define ASIO_WINDOWS_APP 1
+#  endif // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+         // && !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+# endif // defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0603)
+#endif // !defined(ASIO_WINDOWS_APP)
+
+// Legacy WinRT target. Windows App is preferred.
+#if !defined(ASIO_WINDOWS_RUNTIME)
+# if !defined(ASIO_WINDOWS_APP)
+#  if defined(__cplusplus_winrt)
+#   include <winapifamily.h>
+#   if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) \
+    && !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#    define ASIO_WINDOWS_RUNTIME 1
+#   endif // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+          // && !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#  endif // defined(__cplusplus_winrt)
+# endif // !defined(ASIO_WINDOWS_APP)
 #endif // !defined(ASIO_WINDOWS_RUNTIME)
 
-// Windows target. Excludes WinRT.
+// Windows target. Excludes WinRT but includes Windows App targets.
 #if !defined(ASIO_WINDOWS)
 # if !defined(ASIO_WINDOWS_RUNTIME)
 #  if defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_WINDOWS)
 #   define ASIO_WINDOWS 1
 #  elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#   define ASIO_WINDOWS 1
+#  elif defined(ASIO_WINDOWS_APP)
 #   define ASIO_WINDOWS 1
 #  endif // defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_WINDOWS)
 # endif // !defined(ASIO_WINDOWS_RUNTIME)
@@ -746,11 +777,11 @@
 #if !defined(ASIO_HAS_IOCP)
 # if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 #  if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0400)
-#   if !defined(UNDER_CE)
+#   if !defined(UNDER_CE) && !defined(ASIO_WINDOWS_APP)
 #    if !defined(ASIO_DISABLE_IOCP)
 #     define ASIO_HAS_IOCP 1
 #    endif // !defined(ASIO_DISABLE_IOCP)
-#   endif // !defined(UNDER_CE)
+#   endif // !defined(UNDER_CE) && !defined(ASIO_WINDOWS_APP)
 #  endif // defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0400)
 # endif // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 #endif // !defined(ASIO_HAS_IOCP)
@@ -866,9 +897,9 @@
 #if !defined(ASIO_HAS_WINDOWS_OBJECT_HANDLE)
 # if !defined(ASIO_DISABLE_WINDOWS_OBJECT_HANDLE)
 #  if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
-#   if !defined(UNDER_CE)
+#   if !defined(UNDER_CE) && !defined(ASIO_WINDOWS_APP)
 #    define ASIO_HAS_WINDOWS_OBJECT_HANDLE 1
-#   endif // !defined(UNDER_CE)
+#   endif // !defined(UNDER_CE) && !defined(ASIO_WINDOWS_APP)
 #  endif // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 # endif // !defined(ASIO_DISABLE_WINDOWS_OBJECT_HANDLE)
 #endif // !defined(ASIO_HAS_WINDOWS_OBJECT_HANDLE)
@@ -969,11 +1000,18 @@
 # if !defined(ASIO_DISABLE_THREADS)
 #  if defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_HAS_THREADS)
 #   define ASIO_HAS_THREADS 1
-#  elif defined(_MSC_VER) && defined(_MT)
+#  elif defined(__GNUC__) && !defined(__MINGW32__) \
+     && !defined(linux) && !defined(__linux) && !defined(__linux__)
 #   define ASIO_HAS_THREADS 1
-#  elif defined(__BORLANDC__) && defined(__MT__)
+#  elif defined(_MT) || defined(__MT__)
 #   define ASIO_HAS_THREADS 1
-#  elif defined(_POSIX_THREADS)
+#  elif defined(_REENTRANT)
+#   define ASIO_HAS_THREADS 1
+#  elif defined(__APPLE__)
+#   define ASIO_HAS_THREADS 1
+#  elif defined(_POSIX_THREADS) && (_POSIX_THREADS + 0 >= 0)
+#   define ASIO_HAS_THREADS 1
+#  elif defined(_PTHREADS)
 #   define ASIO_HAS_THREADS 1
 #  endif // defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_HAS_THREADS)
 # endif // !defined(ASIO_DISABLE_THREADS)
@@ -984,7 +1022,7 @@
 # if defined(ASIO_HAS_THREADS)
 #  if defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_HAS_PTHREADS)
 #   define ASIO_HAS_PTHREADS 1
-#  elif defined(_POSIX_THREADS)
+#  elif defined(_POSIX_THREADS) && (_POSIX_THREADS + 0 >= 0)
 #   define ASIO_HAS_PTHREADS 1
 #  endif // defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_HAS_PTHREADS)
 # endif // defined(ASIO_HAS_THREADS)
@@ -1084,12 +1122,14 @@
 # if defined(__linux__)
 #  if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 #   if ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 3)
-#    if !defined(__INTEL_COMPILER) && !defined(__ICL)
+#    if !defined(__INTEL_COMPILER) && !defined(__ICL) \
+       && !(defined(__clang__) && defined(__ANDROID__))
 #     define ASIO_HAS_THREAD_KEYWORD_EXTENSION 1
 #     define ASIO_THREAD_KEYWORD __thread
 #    elif defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1100)
 #     define ASIO_HAS_THREAD_KEYWORD_EXTENSION 1
 #    endif // defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1100)
+           // && !(defined(__clang__) && defined(__ANDROID__))
 #   endif // ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 3)
 #  endif // defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 # endif // defined(__linux__)

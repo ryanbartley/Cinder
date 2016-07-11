@@ -47,7 +47,8 @@ class Timeline;
 } // namespace cinder
 
 namespace asio {
-class io_service;
+class io_context;
+typedef io_context io_service;
 } // namespace asio
 
 namespace cinder { namespace app {

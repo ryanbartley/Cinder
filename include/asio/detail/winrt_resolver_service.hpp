@@ -19,8 +19,8 @@
 
 #if defined(ASIO_WINDOWS_RUNTIME)
 
-#include "asio/ip/basic_resolver_iterator.hpp"
 #include "asio/ip/basic_resolver_query.hpp"
+#include "asio/ip/basic_resolver_results.hpp"
 #include "asio/detail/bind_handler.hpp"
 #include "asio/detail/memory.hpp"
 #include "asio/detail/socket_ops.hpp"
@@ -48,13 +48,13 @@ public:
   // The query type.
   typedef asio::ip::basic_resolver_query<Protocol> query_type;
 
-  // The iterator type.
-  typedef asio::ip::basic_resolver_iterator<Protocol> iterator_type;
+  // The results type.
+  typedef asio::ip::basic_resolver_results<Protocol> results_type;
 
   // Constructor.
-  winrt_resolver_service(asio::io_service& io_service)
-    : io_service_(use_service<io_service_impl>(io_service)),
-      async_manager_(use_service<winrt_async_manager>(io_service))
+  winrt_resolver_service(asio::io_context& io_context)
+    : io_context_(use_service<io_context_impl>(io_context)),
+      async_manager_(use_service<winrt_async_manager>(io_context))
   {
   }
 
@@ -64,12 +64,12 @@ public:
   }
 
   // Destroy all user-defined handler objects owned by the service.
-  void shutdown_service()
+  void shutdown()
   {
   }
 
   // Perform any fork-related housekeeping.
-  void fork_service(asio::io_service::fork_event)
+  void notify_fork(asio::io_context::fork_event)
   {
   }
 
@@ -89,7 +89,7 @@ public:
   }
 
   // Resolve a query to a list of entries.
-  iterator_type resolve(implementation_type&,
+  results_type resolve(implementation_type&,
       const query_type& query, asio::error_code& ec)
   {
     try
@@ -101,9 +101,9 @@ public:
             winrt_utils::string(query.service_name())), ec);
 
       if (ec)
-        return iterator_type();
+        return results_type();
 
-      return iterator_type::create(
+      return results_type::create(
           endpoint_pairs, query.hints(),
           query.host_name(), query.service_name());
     }
@@ -111,13 +111,13 @@ public:
     {
       ec = asio::error_code(e->HResult,
           asio::system_category());
-      return iterator_type();
+      return results_type();
     }
   }
 
   // Asynchronously resolve a query to a list of entries.
   template <typename Handler>
-  void async_resolve(implementation_type&,
+  void async_resolve(implementation_type& impl,
       const query_type& query, Handler& handler)
   {
     bool is_continuation =
@@ -129,7 +129,9 @@ public:
       op::ptr::allocate(handler), 0 };
     p.p = new (p.v) op(query, handler);
 
-    ASIO_HANDLER_CREATION((p.p, "resolver", &impl, "async_resolve"));
+    ASIO_HANDLER_CREATION((io_context_.context(),
+          *p.p, "resolver", &impl, 0, "async_resolve"));
+    (void)impl;
 
     try
     {
@@ -143,17 +145,17 @@ public:
     {
       p.p->ec_ = asio::error_code(
           e->HResult, asio::system_category());
-      io_service_.post_immediate_completion(p.p, is_continuation);
+      io_context_.post_immediate_completion(p.p, is_continuation);
       p.v = p.p = 0;
     }
   }
 
   // Resolve an endpoint to a list of entries.
-  iterator_type resolve(implementation_type&,
+  results_type resolve(implementation_type&,
       const endpoint_type&, asio::error_code& ec)
   {
     ec = asio::error::operation_not_supported;
-    return iterator_type();
+    return results_type();
   }
 
   // Asynchronously resolve an endpoint to a list of entries.
@@ -162,13 +164,13 @@ public:
       const endpoint_type&, Handler& handler)
   {
     asio::error_code ec = asio::error::operation_not_supported;
-    const iterator_type iterator;
-    io_service_.get_io_service().post(
-        detail::bind_handler(handler, ec, iterator));
+    const results_type results;
+    io_context_.get_io_context().post(
+        detail::bind_handler(handler, ec, results));
   }
 
 private:
-  io_service_impl& io_service_;
+  io_context_impl& io_context_;
   winrt_async_manager& async_manager_;
 };
 

@@ -141,37 +141,35 @@ engine::want engine::shutdown(asio::error_code& ec)
 engine::want engine::write(const asio::const_buffer& data,
     asio::error_code& ec, std::size_t& bytes_transferred)
 {
-  if (asio::buffer_size(data) == 0)
+  if (data.size() == 0)
   {
     ec = asio::error_code();
     return engine::want_nothing;
   }
 
   return perform(&engine::do_write,
-      const_cast<void*>(asio::buffer_cast<const void*>(data)),
-      asio::buffer_size(data), ec, &bytes_transferred);
+      const_cast<void*>(data.data()),
+      data.size(), ec, &bytes_transferred);
 }
 
 engine::want engine::read(const asio::mutable_buffer& data,
     asio::error_code& ec, std::size_t& bytes_transferred)
 {
-  if (asio::buffer_size(data) == 0)
+  if (data.size() == 0)
   {
     ec = asio::error_code();
     return engine::want_nothing;
   }
 
-  return perform(&engine::do_read,
-      asio::buffer_cast<void*>(data),
-      asio::buffer_size(data), ec, &bytes_transferred);
+  return perform(&engine::do_read, data.data(),
+      data.size(), ec, &bytes_transferred);
 }
 
 asio::mutable_buffers_1 engine::get_output(
     const asio::mutable_buffer& data)
 {
   int length = ::BIO_read(ext_bio_,
-      asio::buffer_cast<void*>(data),
-      static_cast<int>(asio::buffer_size(data)));
+      data.data(), static_cast<int>(data.size()));
 
   return asio::buffer(data,
       length > 0 ? static_cast<std::size_t>(length) : 0);
@@ -181,8 +179,7 @@ asio::const_buffer engine::put_input(
     const asio::const_buffer& data)
 {
   int length = ::BIO_write(ext_bio_,
-      asio::buffer_cast<const void*>(data),
-      static_cast<int>(asio::buffer_size(data)));
+      data.data(), static_cast<int>(data.size()));
 
   return asio::buffer(data +
       (length > 0 ? static_cast<std::size_t>(length) : 0));
@@ -198,35 +195,19 @@ const asio::error_code& engine::map_error_code(
   // If there's data yet to be read, it's an error.
   if (BIO_wpending(ext_bio_))
   {
-#if defined(OPENSSL_IS_BORINGSSL)
-	ec = asio::error_code(
-		ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_RECORD),
-		asio::error::get_ssl_category());
-#else // defined(OPENSSL_IS_BORINGSSL
-    ec = asio::error_code(
-        ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ),
-        asio::error::get_ssl_category());
-#endif // defined(OPENSSL_IS_BORINGSSL)
+    ec = asio::ssl::error::stream_truncated;
     return ec;
   }
 
   // SSL v2 doesn't provide a protocol-level shutdown, so an eof on the
   // underlying transport is passed through.
-  if (ssl_ && ssl_->version == SSL2_VERSION)
+  if (ssl_->version == SSL2_VERSION)
     return ec;
 
   // Otherwise, the peer should have negotiated a proper shutdown.
   if ((::SSL_get_shutdown(ssl_) & SSL_RECEIVED_SHUTDOWN) == 0)
   {
-#if defined(OPENSSL_IS_BORINGSSL)
-	  ec = asio::error_code(
-		ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_RECORD),
-		asio::error::get_ssl_category());
-#else // defined(OPENSSL_IS_BORINGSSL
-    ec = asio::error_code(
-        ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ),
-        asio::error::get_ssl_category());
-#endif
+    ec = asio::ssl::error::stream_truncated;
   }
 
   return ec;

@@ -18,7 +18,7 @@
 #include "asio/detail/config.hpp"
 #include <cstddef>
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
+#include "asio/io_context.hpp"
 #include "asio/detail/bind_handler.hpp"
 #include "asio/detail/fenced_block.hpp"
 #include "asio/detail/memory.hpp"
@@ -61,8 +61,8 @@ public:
   };
 
   // Constructor.
-  deadline_timer_service(asio::io_service& io_service)
-    : scheduler_(asio::use_service<timer_scheduler>(io_service))
+  deadline_timer_service(asio::io_context& io_context)
+    : scheduler_(asio::use_service<timer_scheduler>(io_context))
   {
     scheduler_.init_task();
     scheduler_.add_timer_queue(timer_queue_);
@@ -75,7 +75,7 @@ public:
   }
 
   // Destroy all user-defined handler objects owned by the service.
-  void shutdown_service()
+  void shutdown()
   {
   }
 
@@ -134,7 +134,8 @@ public:
       return 0;
     }
 
-    ASIO_HANDLER_OPERATION(("deadline_timer", &impl, "cancel"));
+    ASIO_HANDLER_OPERATION((scheduler_.context(),
+          "deadline_timer", &impl, 0, "cancel"));
 
     std::size_t count = scheduler_.cancel_timer(timer_queue_, impl.timer_data);
     impl.might_have_pending_waits = false;
@@ -152,7 +153,8 @@ public:
       return 0;
     }
 
-    ASIO_HANDLER_OPERATION(("deadline_timer", &impl, "cancel_one"));
+    ASIO_HANDLER_OPERATION((scheduler_.context(),
+          "deadline_timer", &impl, 0, "cancel_one"));
 
     std::size_t count = scheduler_.cancel_timer(
         timer_queue_, impl.timer_data, 1);
@@ -211,7 +213,8 @@ public:
 
     impl.might_have_pending_waits = true;
 
-    ASIO_HANDLER_CREATION((p.p, "deadline_timer", &impl, "async_wait"));
+    ASIO_HANDLER_CREATION((scheduler_.context(),
+          *p.p, "deadline_timer", &impl, 0, "async_wait"));
 
     scheduler_.schedule_timer(timer_queue_, impl.expiry, impl.timer_data, p.p);
     p.v = p.p = 0;

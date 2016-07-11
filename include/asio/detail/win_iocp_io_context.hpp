@@ -1,5 +1,5 @@
 //
-// detail/win_iocp_io_service.hpp
+// detail/win_iocp_io_context.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
@@ -8,8 +8,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#ifndef ASIO_DETAIL_WIN_IOCP_IO_SERVICE_HPP
-#define ASIO_DETAIL_WIN_IOCP_IO_SERVICE_HPP
+#ifndef ASIO_DETAIL_WIN_IOCP_IO_CONTEXT_HPP
+#define ASIO_DETAIL_WIN_IOCP_IO_CONTEXT_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
@@ -40,18 +40,18 @@ namespace detail {
 
 class wait_op;
 
-class win_iocp_io_service
-  : public execution_context_service_base<win_iocp_io_service>,
+class win_iocp_io_context
+  : public execution_context_service_base<win_iocp_io_context>,
     public thread_context
 {
 public:
   // Constructor. Specifies a concurrency hint that is passed through to the
   // underlying I/O completion port.
-  ASIO_DECL win_iocp_io_service(asio::execution_context& ctx,
-      size_t concurrency_hint = 0);
+  ASIO_DECL win_iocp_io_context(asio::execution_context& ctx,
+      int concurrency_hint = -1);
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown_service();
+  ASIO_DECL void shutdown();
 
   // Initialise the task. Nothing to do here.
   void init_task()
@@ -77,7 +77,7 @@ public:
   // Stop the event processing loop.
   ASIO_DECL void stop();
 
-  // Determine whether the io_service is stopped.
+  // Determine whether the io_context is stopped.
   bool stopped() const
   {
     return ::InterlockedExchangeAdd(&stopped_, 0) != 0;
@@ -148,8 +148,8 @@ public:
     post_immediate_completion(op, false);
   }
 
-  // Process unfinished operations as part of a shutdown_service operation.
-  // Assumes that work_started() was previously called for the operations.
+  // Process unfinished operations as part of a shutdown operation. Assumes
+  // that work_started() was previously called for the operations.
   ASIO_DECL void abandon_operations(op_queue<operation>& ops);
 
   // Called after starting an overlapped I/O operation that did not complete
@@ -306,11 +306,11 @@ private:
 
 #include "asio/detail/pop_options.hpp"
 
-#include "asio/detail/impl/win_iocp_io_service.hpp"
+#include "asio/detail/impl/win_iocp_io_context.hpp"
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/detail/impl/win_iocp_io_service.ipp"
+# include "asio/detail/impl/win_iocp_io_context.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // defined(ASIO_HAS_IOCP)
 
-#endif // ASIO_DETAIL_WIN_IOCP_IO_SERVICE_HPP
+#endif // ASIO_DETAIL_WIN_IOCP_IO_CONTEXT_HPP

@@ -84,7 +84,7 @@ struct scheduler::work_cleanup
 };
 
 scheduler::scheduler(
-    asio::execution_context& ctx, std::size_t concurrency_hint)
+    asio::execution_context& ctx, int concurrency_hint)
   : asio::detail::execution_context_service_base<scheduler>(ctx),
     one_thread_(concurrency_hint == 1),
     mutex_(),
@@ -97,7 +97,7 @@ scheduler::scheduler(
   ASIO_HANDLER_TRACKING_INIT;
 }
 
-void scheduler::shutdown_service()
+void scheduler::shutdown()
 {
   mutex::scoped_lock lock(mutex_);
   shutdown_ = true;
@@ -241,6 +241,12 @@ void scheduler::restart()
 {
   mutex::scoped_lock lock(mutex_);
   stopped_ = false;
+}
+
+void scheduler::compensating_work_started()
+{
+  thread_info_base* this_thread = thread_call_stack::contains(this);
+  ++static_cast<thread_info*>(this_thread)->private_outstanding_work;
 }
 
 void scheduler::post_immediate_completion(

@@ -19,8 +19,8 @@
 
 #if !defined(ASIO_WINDOWS_RUNTIME)
 
-#include "asio/ip/basic_resolver_iterator.hpp"
 #include "asio/ip/basic_resolver_query.hpp"
+#include "asio/ip/basic_resolver_results.hpp"
 #include "asio/detail/memory.hpp"
 #include "asio/detail/resolve_endpoint_op.hpp"
 #include "asio/detail/resolve_op.hpp"
@@ -45,17 +45,17 @@ public:
   // The query type.
   typedef asio::ip::basic_resolver_query<Protocol> query_type;
 
-  // The iterator type.
-  typedef asio::ip::basic_resolver_iterator<Protocol> iterator_type;
+  // The results type.
+  typedef asio::ip::basic_resolver_results<Protocol> results_type;
 
   // Constructor.
-  resolver_service(asio::io_service& io_service)
-    : resolver_service_base(io_service)
+  resolver_service(asio::io_context& io_context)
+    : resolver_service_base(io_context)
   {
   }
 
   // Resolve a query to a list of entries.
-  iterator_type resolve(implementation_type&, const query_type& query,
+  results_type resolve(implementation_type&, const query_type& query,
       asio::error_code& ec)
   {
     asio::detail::addrinfo_type* address_info = 0;
@@ -64,7 +64,7 @@ public:
         query.service_name().c_str(), query.hints(), &address_info, ec);
     auto_addrinfo auto_address_info(address_info);
 
-    return ec ? iterator_type() : iterator_type::create(
+    return ec ? results_type() : results_type::create(
         address_info, query.host_name(), query.service_name());
   }
 
@@ -77,16 +77,17 @@ public:
     typedef resolve_op<Protocol, Handler> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(impl, query, io_service_impl_, handler);
+    p.p = new (p.v) op(impl, query, io_context_impl_, handler);
 
-    ASIO_HANDLER_CREATION((p.p, "resolver", &impl, "async_resolve"));
+    ASIO_HANDLER_CREATION((io_context_impl_.context(),
+          *p.p, "resolver", &impl, 0, "async_resolve"));
 
     start_resolve_op(p.p);
     p.v = p.p = 0;
   }
 
   // Resolve an endpoint to a list of entries.
-  iterator_type resolve(implementation_type&,
+  results_type resolve(implementation_type&,
       const endpoint_type& endpoint, asio::error_code& ec)
   {
     char host_name[NI_MAXHOST];
@@ -95,7 +96,7 @@ public:
         host_name, NI_MAXHOST, service_name, NI_MAXSERV,
         endpoint.protocol().type(), ec);
 
-    return ec ? iterator_type() : iterator_type::create(
+    return ec ? results_type() : results_type::create(
         endpoint, host_name, service_name);
   }
 
@@ -108,9 +109,10 @@ public:
     typedef resolve_endpoint_op<Protocol, Handler> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(impl, endpoint, io_service_impl_, handler);
+    p.p = new (p.v) op(impl, endpoint, io_context_impl_, handler);
 
-    ASIO_HANDLER_CREATION((p.p, "resolver", &impl, "async_resolve"));
+    ASIO_HANDLER_CREATION((io_context_impl_.context(),
+          *p.p, "resolver", &impl, 0, "async_resolve"));
 
     start_resolve_op(p.p);
     p.v = p.p = 0;
