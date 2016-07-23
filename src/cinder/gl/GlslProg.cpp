@@ -564,7 +564,7 @@ GlslProg::GlslProg( const Format &format )
 	}
 #endif
 #if defined( CINDER_GL_HAS_UNIFORM_BLOCKS )
-	cacheActiveUniformBlocks();
+//	cacheActiveUniformBlocks();
 #endif
 
 	auto & userDefinedUniforms = format.getUniforms();
@@ -1187,43 +1187,47 @@ const GlslProg::UniformBlock* GlslProg::findUniformBlock( const std::string &nam
 
 void GlslProg::uniformBlock( int loc, int binding )
 {
-	auto found = find_if( mUniformBlocks.begin(), mUniformBlocks.end(),
-						 [loc]( const UniformBlock &block ) {
-							 return block.mLoc == loc;
-						 } );
-
-	if( found != mUniformBlocks.end() ) {
-		if( found->mBlockBinding != binding ) {
-			found->mBlockBinding = binding;
-			glUniformBlockBinding( mHandle, found->mLoc, binding );
-		}
-	}
-	else {
-		CI_LOG_W( "Uniform block at " << loc << " location not found" );
-	}
+	glUniformBlockBinding( mHandle, loc, binding );
+//	auto found = find_if( mUniformBlocks.begin(), mUniformBlocks.end(),
+//						 [loc]( const UniformBlock &block ) {
+//							 return block.mLoc == loc;
+//						 } );
+//
+//	if( found != mUniformBlocks.end() ) {
+//		if( found->mBlockBinding != binding ) {
+//			found->mBlockBinding = binding;
+//			glUniformBlockBinding( mHandle, found->mLoc, binding );
+//		}
+//	}
+//	else {
+//		CI_LOG_W( "Uniform block at " << loc << " location not found" );
+//	}
 }
 
 void GlslProg::uniformBlock( const std::string &name, GLint binding )
 {
-	auto found = findUniformBlock( name );
-	if( found ) {
-		if( found->mBlockBinding != binding ) {
-			found->mBlockBinding = binding;
-			glUniformBlockBinding( mHandle, found->mLoc, binding );
-		}
-	}
-	else {
-		CI_LOG_W( "Uniform block \"" << name << "\" not found" );
-	}
+	auto loc = glGetUniformBlockIndex( mHandle, name.c_str() );
+	glUniformBlockBinding( mHandle, loc, binding );
+//	auto found = findUniformBlock( name );
+//	if( found ) {
+//		if( found->mBlockBinding != binding ) {
+//			found->mBlockBinding = binding;
+//		}
+//	}
+//	else {
+//		CI_LOG_W( "Uniform block \"" << name << "\" not found" );
+//	}
 }
 
 GLint GlslProg::getUniformBlockLocation( const std::string &name ) const
 {
-	auto found = findUniformBlock( name );
-	if( found )
-		return found->mLoc;
-	else
-		return -1;
+	auto loc = glGetUniformBlockIndex( mHandle, name.c_str() );
+	return loc;
+//	auto found = findUniformBlock( name );
+//	if( found )
+//		return found->mLoc;
+//	else
+//		return -1;
 }
 
 GLint GlslProg::getUniformBlockSize( GLint blockBinding ) const
@@ -1921,6 +1925,7 @@ void GlslProg::uniformMatFunc( int location, const mat4 *data, int count, bool t
 
 std::ostream& operator<<( std::ostream &os, const GlslProg &rhs )
 {
+	
 	os << "ID: " << rhs.mHandle << std::endl;
 	if( ! rhs.mLabel.empty() )
 		os << "    Label: " << rhs.mLabel << std::endl;
