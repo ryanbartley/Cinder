@@ -2,7 +2,7 @@
 // windows/object_handle_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2011 Boris Schaeling (boris@highscore.de)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -24,7 +24,7 @@
 #include "asio/async_result.hpp"
 #include "asio/detail/win_object_handle_service.hpp"
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
+#include "asio/io_context.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -34,7 +34,7 @@ namespace windows {
 /// Default service implementation for an object handle.
 class object_handle_service
 #if defined(GENERATING_DOCUMENTATION)
-  : public asio::io_service::service
+  : public asio::io_context::service
 #else
   : public asio::detail::service_base<object_handle_service>
 #endif
@@ -42,7 +42,7 @@ class object_handle_service
 public:
 #if defined(GENERATING_DOCUMENTATION)
   /// The unique service identifier.
-  static asio::io_service::id id;
+  static asio::io_context::id id;
 #endif
 
 private:
@@ -64,10 +64,10 @@ public:
   typedef service_impl_type::native_handle_type native_handle_type;
 #endif
 
-  /// Construct a new object handle service for the specified io_service.
-  explicit object_handle_service(asio::io_service& io_service)
-    : asio::detail::service_base<object_handle_service>(io_service),
-      service_impl_(io_service)
+  /// Construct a new object handle service for the specified io_context.
+  explicit object_handle_service(asio::io_context& io_context)
+    : asio::detail::service_base<object_handle_service>(io_context),
+      service_impl_(io_context)
   {
   }
 
@@ -146,9 +146,8 @@ public:
   async_wait(implementation_type& impl,
       ASIO_MOVE_ARG(WaitHandler) handler)
   {
-    asio::detail::async_result_init<
-      WaitHandler, void (asio::error_code)> init(
-        ASIO_MOVE_CAST(WaitHandler)(handler));
+    asio::async_completion<WaitHandler,
+      void (asio::error_code)> init(handler);
 
     service_impl_.async_wait(impl, init.handler);
 
@@ -157,9 +156,9 @@ public:
 
 private:
   // Destroy all user-defined handler objects owned by the service.
-  void shutdown_service()
+  void shutdown()
   {
-    service_impl_.shutdown_service();
+    service_impl_.shutdown();
   }
 
   // The platform-specific implementation.

@@ -2,7 +2,7 @@
 // socket_acceptor_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,7 +19,7 @@
 #include "asio/basic_socket.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
+#include "asio/io_context.hpp"
 
 #if defined(ASIO_WINDOWS_RUNTIME)
 # include "asio/detail/null_socket_service.hpp"
@@ -37,7 +37,7 @@ namespace asio {
 template <typename Protocol>
 class socket_acceptor_service
 #if defined(GENERATING_DOCUMENTATION)
-  : public asio::io_service::service
+  : public asio::io_context::service
 #else
   : public asio::detail::service_base<socket_acceptor_service<Protocol> >
 #endif
@@ -45,7 +45,7 @@ class socket_acceptor_service
 public:
 #if defined(GENERATING_DOCUMENTATION)
   /// The unique service identifier.
-  static asio::io_service::id id;
+  static asio::io_context::id id;
 #endif
 
   /// The protocol type.
@@ -72,13 +72,6 @@ public:
   typedef typename service_impl_type::implementation_type implementation_type;
 #endif
 
-  /// (Deprecated: Use native_handle_type.) The native acceptor type.
-#if defined(GENERATING_DOCUMENTATION)
-  typedef implementation_defined native_type;
-#else
-  typedef typename service_impl_type::native_handle_type native_type;
-#endif
-
   /// The native acceptor type.
 #if defined(GENERATING_DOCUMENTATION)
   typedef implementation_defined native_handle_type;
@@ -86,11 +79,11 @@ public:
   typedef typename service_impl_type::native_handle_type native_handle_type;
 #endif
 
-  /// Construct a new socket acceptor service for the specified io_service.
-  explicit socket_acceptor_service(asio::io_service& io_service)
+  /// Construct a new socket acceptor service for the specified io_context.
+  explicit socket_acceptor_service(asio::io_context& io_context)
     : asio::detail::service_base<
-        socket_acceptor_service<Protocol> >(io_service),
-      service_impl_(io_service)
+        socket_acceptor_service<Protocol> >(io_context),
+      service_impl_(io_context)
   {
   }
 
@@ -186,12 +179,6 @@ public:
     return service_impl_.close(impl, ec);
   }
 
-  /// (Deprecated: Use native_handle().) Get the native acceptor implementation.
-  native_type native(implementation_type& impl)
-  {
-    return service_impl_.native_handle(impl);
-  }
-
   /// Get the native acceptor implementation.
   native_handle_type native_handle(implementation_type& impl)
   {
@@ -255,6 +242,30 @@ public:
     return service_impl_.local_endpoint(impl, ec);
   }
 
+  /// Wait for the acceptor to become ready to read, ready to write, or to have
+  /// pending error conditions.
+  asio::error_code wait(implementation_type& impl,
+      socket_base::wait_type w, asio::error_code& ec)
+  {
+    return service_impl_.wait(impl, w, ec);
+  }
+
+  /// Asynchronously wait for the acceptor to become ready to read, ready to
+  /// write, or to have pending error conditions.
+  template <typename WaitHandler>
+  ASIO_INITFN_RESULT_TYPE(WaitHandler,
+      void (asio::error_code))
+  async_wait(implementation_type& impl, socket_base::wait_type w,
+      ASIO_MOVE_ARG(WaitHandler) handler)
+  {
+    async_completion<WaitHandler,
+      void (asio::error_code)> init(handler);
+
+    service_impl_.async_wait(impl, w, init.handler);
+
+    return init.result.get();
+  }
+
   /// Accept a new connection.
   template <typename Protocol1, typename SocketService>
   asio::error_code accept(implementation_type& impl,
@@ -264,6 +275,16 @@ public:
   {
     return service_impl_.accept(impl, peer, peer_endpoint, ec);
   }
+
+#if defined(ASIO_HAS_MOVE)
+  /// Accept a new connection.
+  typename Protocol::socket accept(implementation_type& impl,
+      io_context* peer_io_context, endpoint_type* peer_endpoint,
+      asio::error_code& ec)
+  {
+    return service_impl_.accept(impl, peer_io_context, peer_endpoint, ec);
+  }
+#endif // defined(ASIO_HAS_MOVE)
 
   /// Start an asynchronous accept.
   template <typename Protocol1, typename SocketService, typename AcceptHandler>
@@ -275,20 +296,39 @@ public:
       ASIO_MOVE_ARG(AcceptHandler) handler,
       typename enable_if<is_convertible<Protocol, Protocol1>::value>::type* = 0)
   {
-    detail::async_result_init<
-      AcceptHandler, void (asio::error_code)> init(
-        ASIO_MOVE_CAST(AcceptHandler)(handler));
+    async_completion<AcceptHandler,
+      void (asio::error_code)> init(handler);
 
     service_impl_.async_accept(impl, peer, peer_endpoint, init.handler);
 
     return init.result.get();
   }
 
+#if defined(ASIO_HAS_MOVE)
+  /// Start an asynchronous accept.
+  template <typename MoveAcceptHandler>
+  ASIO_INITFN_RESULT_TYPE(MoveAcceptHandler,
+      void (asio::error_code, typename Protocol::socket))
+  async_accept(implementation_type& impl,
+      asio::io_context* peer_io_context, endpoint_type* peer_endpoint,
+      ASIO_MOVE_ARG(MoveAcceptHandler) handler)
+  {
+    async_completion<MoveAcceptHandler,
+      void (asio::error_code,
+        typename Protocol::socket)> init(handler);
+
+    service_impl_.async_accept(impl,
+        peer_io_context, peer_endpoint, init.handler);
+
+    return init.result.get();
+  }
+#endif // defined(ASIO_HAS_MOVE)
+
 private:
   // Destroy all user-defined handler objects owned by the service.
-  void shutdown_service()
+  void shutdown()
   {
-    service_impl_.shutdown_service();
+    service_impl_.shutdown();
   }
 
   // The platform-specific implementation.

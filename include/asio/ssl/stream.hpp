@@ -2,7 +2,7 @@
 // ssl/stream.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,35 +17,25 @@
 
 #include "asio/detail/config.hpp"
 
-#if defined(ASIO_ENABLE_OLD_SSL)
-# include "asio/ssl/old/stream.hpp"
-#else // defined(ASIO_ENABLE_OLD_SSL)
-# include "asio/async_result.hpp"
-# include "asio/detail/buffer_sequence_adapter.hpp"
-# include "asio/detail/handler_type_requirements.hpp"
-# include "asio/detail/noncopyable.hpp"
-# include "asio/detail/type_traits.hpp"
-# include "asio/ssl/context.hpp"
-# include "asio/ssl/detail/buffered_handshake_op.hpp"
-# include "asio/ssl/detail/handshake_op.hpp"
-# include "asio/ssl/detail/io.hpp"
-# include "asio/ssl/detail/read_op.hpp"
-# include "asio/ssl/detail/shutdown_op.hpp"
-# include "asio/ssl/detail/stream_core.hpp"
-# include "asio/ssl/detail/write_op.hpp"
-# include "asio/ssl/stream_base.hpp"
-#endif // defined(ASIO_ENABLE_OLD_SSL)
+#include "asio/async_result.hpp"
+#include "asio/detail/buffer_sequence_adapter.hpp"
+#include "asio/detail/handler_type_requirements.hpp"
+#include "asio/detail/noncopyable.hpp"
+#include "asio/detail/type_traits.hpp"
+#include "asio/ssl/context.hpp"
+#include "asio/ssl/detail/buffered_handshake_op.hpp"
+#include "asio/ssl/detail/handshake_op.hpp"
+#include "asio/ssl/detail/io.hpp"
+#include "asio/ssl/detail/read_op.hpp"
+#include "asio/ssl/detail/shutdown_op.hpp"
+#include "asio/ssl/detail/stream_core.hpp"
+#include "asio/ssl/detail/write_op.hpp"
+#include "asio/ssl/stream_base.hpp"
 
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
 namespace ssl {
-
-#if defined(ASIO_ENABLE_OLD_SSL)
-
-using asio::ssl::old::stream;
-
-#else // defined(ASIO_ENABLE_OLD_SSL)
 
 /// Provides stream-oriented functionality using SSL.
 /**
@@ -61,9 +51,9 @@ using asio::ssl::old::stream;
  * @par Example
  * To use the SSL stream template with an ip::tcp::socket, you would write:
  * @code
- * asio::io_service io_service;
+ * asio::io_context io_context;
  * asio::ssl::context ctx(asio::ssl::context::sslv23);
- * asio::ssl::stream<asio:ip::tcp::socket> sock(io_service, ctx);
+ * asio::ssl::stream<asio:ip::tcp::socket> sock(io_context, ctx);
  * @endcode
  *
  * @par Concepts:
@@ -84,15 +74,16 @@ public:
     SSL* ssl;
   };
 
-  /// (Deprecated: Use native_handle_type.) The underlying implementation type.
-  typedef impl_struct* impl_type;
-
   /// The type of the next layer.
   typedef typename remove_reference<Stream>::type next_layer_type;
 
   /// The type of the lowest layer.
   typedef typename next_layer_type::lowest_layer_type lowest_layer_type;
 
+  /// The type of the executor associated with the object.
+  typedef typename lowest_layer_type::executor_type executor_type;
+
+#if defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
   /// Construct a stream.
   /**
    * This constructor creates a stream and initialises the underlying stream
@@ -103,30 +94,58 @@ public:
    * @param ctx The SSL context to be used for the stream.
    */
   template <typename Arg>
+  stream(Arg&& arg, context& ctx)
+    : next_layer_(ASIO_MOVE_CAST(Arg)(arg)),
+      core_(ctx.native_handle(),
+          next_layer_.lowest_layer().get_executor().context())
+  {
+  }
+#else // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+  template <typename Arg>
   stream(Arg& arg, context& ctx)
     : next_layer_(arg),
-      core_(ctx.native_handle(), next_layer_.lowest_layer().get_io_service())
+      core_(ctx.native_handle(),
+          next_layer_.lowest_layer().get_executor().context())
   {
-    backwards_compatible_impl_.ssl = core_.engine_.native_handle();
   }
+#endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
 
   /// Destructor.
+  /**
+   * @note A @c stream object must not be destroyed while there are pending
+   * asynchronous operations associated with it.
+   */
   ~stream()
   {
   }
 
-  /// Get the io_service associated with the object.
+  /// Get the executor associated with the object.
   /**
-   * This function may be used to obtain the io_service object that the stream
+   * This function may be used to obtain the executor object that the stream
    * uses to dispatch handlers for asynchronous operations.
    *
-   * @return A reference to the io_service object that stream will use to
-   * dispatch handlers. Ownership is not transferred to the caller.
+   * @return A copy of the executor that stream will use to dispatch handlers.
    */
-  asio::io_service& get_io_service()
+  executor_type get_executor() ASIO_NOEXCEPT
+  {
+    return next_layer_.lowest_layer().get_executor();
+  }
+
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use get_executor().) Get the io_context associated with the
+  /// object.
+  asio::io_context& get_io_context()
+  {
+    return next_layer_.lowest_layer().get_io_context();
+  }
+
+  /// (Deprecated: Use get_executor().) Get the io_context associated with the
+  /// object.
+  asio::io_context& get_io_service()
   {
     return next_layer_.lowest_layer().get_io_service();
   }
+#endif // !defined(ASIO_NO_DEPRECATED)
 
   /// Get the underlying implementation in the native type.
   /**
@@ -139,7 +158,7 @@ public:
    * suitable for passing to functions such as @c SSL_get_verify_result and
    * @c SSL_get_peer_certificate:
    * @code
-   * asio::ssl::stream<asio:ip::tcp::socket> sock(io_service, ctx);
+   * asio::ssl::stream<asio:ip::tcp::socket> sock(io_context, ctx);
    *
    * // ... establish connection and perform handshake ...
    *
@@ -155,18 +174,6 @@ public:
   native_handle_type native_handle()
   {
     return core_.engine_.native_handle();
-  }
-
-  /// (Deprecated: Use native_handle().) Get the underlying implementation in
-  /// the native type.
-  /**
-   * This function may be used to obtain the underlying implementation of the
-   * context. This is intended to allow access to stream functionality that is
-   * not otherwise provided.
-   */
-  impl_type impl()
-  {
-    return &backwards_compatible_impl_;
   }
 
   /// Get a reference to the next layer.
@@ -447,9 +454,8 @@ public:
     // not meet the documented type requirements for a HandshakeHandler.
     ASIO_HANDSHAKE_HANDLER_CHECK(HandshakeHandler, handler) type_check;
 
-    asio::detail::async_result_init<
-      HandshakeHandler, void (asio::error_code)> init(
-        ASIO_MOVE_CAST(HandshakeHandler)(handler));
+    asio::async_completion<HandshakeHandler,
+      void (asio::error_code)> init(handler);
 
     detail::async_io(next_layer_, core_,
         detail::handshake_op(type), init.handler);
@@ -489,9 +495,8 @@ public:
     ASIO_BUFFERED_HANDSHAKE_HANDLER_CHECK(
         BufferedHandshakeHandler, handler) type_check;
 
-    asio::detail::async_result_init<BufferedHandshakeHandler,
-      void (asio::error_code, std::size_t)> init(
-        ASIO_MOVE_CAST(BufferedHandshakeHandler)(handler));
+    asio::async_completion<BufferedHandshakeHandler,
+      void (asio::error_code, std::size_t)> init(handler);
 
     detail::async_io(next_layer_, core_,
         detail::buffered_handshake_op<ConstBufferSequence>(type, buffers),
@@ -548,9 +553,8 @@ public:
     // not meet the documented type requirements for a ShutdownHandler.
     ASIO_SHUTDOWN_HANDLER_CHECK(ShutdownHandler, handler) type_check;
 
-    asio::detail::async_result_init<
-      ShutdownHandler, void (asio::error_code)> init(
-        ASIO_MOVE_CAST(ShutdownHandler)(handler));
+    asio::async_completion<ShutdownHandler,
+      void (asio::error_code)> init(handler);
 
     detail::async_io(next_layer_, core_, detail::shutdown_op(), init.handler);
 
@@ -638,9 +642,8 @@ public:
     // not meet the documented type requirements for a WriteHandler.
     ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
 
-    asio::detail::async_result_init<
-      WriteHandler, void (asio::error_code, std::size_t)> init(
-        ASIO_MOVE_CAST(WriteHandler)(handler));
+    asio::async_completion<WriteHandler,
+      void (asio::error_code, std::size_t)> init(handler);
 
     detail::async_io(next_layer_, core_,
         detail::write_op<ConstBufferSequence>(buffers), init.handler);
@@ -730,9 +733,8 @@ public:
     // not meet the documented type requirements for a ReadHandler.
     ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
 
-    asio::detail::async_result_init<
-      ReadHandler, void (asio::error_code, std::size_t)> init(
-        ASIO_MOVE_CAST(ReadHandler)(handler));
+    asio::async_completion<ReadHandler,
+      void (asio::error_code, std::size_t)> init(handler);
 
     detail::async_io(next_layer_, core_,
         detail::read_op<MutableBufferSequence>(buffers), init.handler);
@@ -743,10 +745,7 @@ public:
 private:
   Stream next_layer_;
   detail::stream_core core_;
-  impl_struct backwards_compatible_impl_;
 };
-
-#endif // defined(ASIO_ENABLE_OLD_SSL)
 
 } // namespace ssl
 } // namespace asio

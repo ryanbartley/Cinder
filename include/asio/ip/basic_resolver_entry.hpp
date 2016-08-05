@@ -2,7 +2,7 @@
 // ip/basic_resolver_entry.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -74,10 +74,28 @@ public:
     return host_name_;
   }
 
+  /// Get the host name associated with the entry.
+  template <class Allocator>
+  std::basic_string<char, std::char_traits<char>, Allocator> host_name(
+      const Allocator& alloc = Allocator()) const
+  {
+    return std::basic_string<char, std::char_traits<char>, Allocator>(
+        host_name_.c_str(), alloc);
+  }
+
   /// Get the service name associated with the entry.
   std::string service_name() const
   {
     return service_name_;
+  }
+
+  /// Get the service name associated with the entry.
+  template <class Allocator>
+  std::basic_string<char, std::char_traits<char>, Allocator> service_name(
+      const Allocator& alloc = Allocator()) const
+  {
+    return std::basic_string<char, std::char_traits<char>, Allocator>(
+        service_name_.c_str(), alloc);
   }
 
 private:

@@ -2,7 +2,7 @@
 // detail/winrt_ssocket_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,8 +20,8 @@
 #if defined(ASIO_WINDOWS_RUNTIME)
 
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
-#include "asio/detail/addressof.hpp"
+#include "asio/io_context.hpp"
+#include "asio/detail/memory.hpp"
 #include "asio/detail/winrt_socket_connect_op.hpp"
 #include "asio/detail/winrt_ssocket_service_base.hpp"
 #include "asio/detail/winrt_utils.hpp"
@@ -60,8 +60,8 @@ public:
   };
 
   // Constructor.
-  winrt_ssocket_service(asio::io_service& io_service)
-    : winrt_ssocket_service_base(io_service)
+  winrt_ssocket_service(asio::io_context& io_context)
+    : winrt_ssocket_service_base(io_context)
   {
   }
 
@@ -211,11 +211,11 @@ public:
     // Allocate and construct an operation to wrap the handler.
     typedef winrt_socket_connect_op<Handler> op;
     typename op::ptr p = { asio::detail::addressof(handler),
-      asio_handler_alloc_helpers::allocate(
-        sizeof(op), handler), 0 };
+      op::ptr::allocate(handler), 0 };
     p.p = new (p.v) op(handler);
 
-    ASIO_HANDLER_CREATION((p.p, "socket", &impl, "async_connect"));
+    ASIO_HANDLER_CREATION((io_context_.context(),
+          *p.p, "socket", &impl, 0, "async_connect"));
 
     start_connect_op(impl, peer_endpoint.data(), p.p, is_continuation);
     p.v = p.p = 0;

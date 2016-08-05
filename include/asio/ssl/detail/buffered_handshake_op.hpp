@@ -2,7 +2,7 @@
 // ssl/detail/buffered_handshake_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,17 +17,13 @@
 
 #include "asio/detail/config.hpp"
 
-#if !defined(ASIO_ENABLE_OLD_SSL)
-# include "asio/ssl/detail/engine.hpp"
-#endif // !defined(ASIO_ENABLE_OLD_SSL)
+#include "asio/ssl/detail/engine.hpp"
 
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
 namespace ssl {
 namespace detail {
-
-#if !defined(ASIO_ENABLE_OLD_SSL)
 
 template <typename ConstBufferSequence>
 class buffered_handshake_op
@@ -62,9 +58,9 @@ public:
         const_buffer buffer(*iter);
 
         // Skip over any buffers which have already been consumed by the engine.
-        if (bytes_transferred >= accumulated_size + buffer_size(buffer))
+        if (bytes_transferred >= accumulated_size + buffer.size())
         {
-          accumulated_size += buffer_size(buffer);
+          accumulated_size += buffer.size();
           ++iter;
           continue;
         }
@@ -77,9 +73,9 @@ public:
 
         // Pass the buffer to the engine, and update the bytes transferred to
         // reflect the total number of bytes consumed so far.
-        bytes_transferred += buffer_size(buffer);
+        bytes_transferred += buffer.size();
         buffer = eng.put_input(buffer);
-        bytes_transferred -= buffer_size(buffer);
+        bytes_transferred -= buffer.size();
         break;
       }
     }
@@ -98,8 +94,6 @@ private:
   ConstBufferSequence buffers_;
   std::size_t total_buffer_size_;
 };
-
-#endif // !defined(ASIO_ENABLE_OLD_SSL)
 
 } // namespace detail
 } // namespace ssl

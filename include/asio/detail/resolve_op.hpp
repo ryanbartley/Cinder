@@ -2,7 +2,7 @@
 // detail/resolve_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,14 +17,14 @@
 
 #include "asio/detail/config.hpp"
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
-#include "asio/ip/basic_resolver_iterator.hpp"
+#include "asio/io_context.hpp"
 #include "asio/ip/basic_resolver_query.hpp"
-#include "asio/detail/addressof.hpp"
+#include "asio/ip/basic_resolver_results.hpp"
 #include "asio/detail/bind_handler.hpp"
 #include "asio/detail/fenced_block.hpp"
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
+#include "asio/detail/memory.hpp"
 #include "asio/detail/operation.hpp"
 #include "asio/detail/socket_ops.hpp"
 
@@ -40,17 +40,18 @@ public:
   ASIO_DEFINE_HANDLER_PTR(resolve_op);
 
   typedef asio::ip::basic_resolver_query<Protocol> query_type;
-  typedef asio::ip::basic_resolver_iterator<Protocol> iterator_type;
+  typedef asio::ip::basic_resolver_results<Protocol> results_type;
 
   resolve_op(socket_ops::weak_cancel_token_type cancel_token,
-      const query_type& query, io_service_impl& ios, Handler& handler)
+      const query_type& query, io_context_impl& ioc, Handler& handler)
     : operation(&resolve_op::do_complete),
       cancel_token_(cancel_token),
       query_(query),
-      io_service_impl_(ios),
+      io_context_impl_(ioc),
       handler_(ASIO_MOVE_CAST(Handler)(handler)),
       addrinfo_(0)
   {
+    handler_work<Handler>::start(handler_);
   }
 
   ~resolve_op()
@@ -59,17 +60,18 @@ public:
       socket_ops::freeaddrinfo(addrinfo_);
   }
 
-  static void do_complete(io_service_impl* owner, operation* base,
+  static void do_complete(void* owner, operation* base,
       const asio::error_code& /*ec*/,
       std::size_t /*bytes_transferred*/)
   {
     // Take ownership of the operation object.
     resolve_op* o(static_cast<resolve_op*>(base));
     ptr p = { asio::detail::addressof(o->handler_), o, o };
+    handler_work<Handler> w(o->handler_);
 
-    if (owner && owner != &o->io_service_impl_)
+    if (owner && owner != &o->io_context_impl_)
     {
-      // The operation is being run on the worker io_service. Time to perform
+      // The operation is being run on the worker io_context. Time to perform
       // the resolver operation.
     
       // Perform the blocking host resolution operation.
@@ -77,16 +79,16 @@ public:
           o->query_.host_name().c_str(), o->query_.service_name().c_str(),
           o->query_.hints(), &o->addrinfo_, o->ec_);
 
-      // Pass operation back to main io_service for completion.
-      o->io_service_impl_.post_deferred_completion(o);
+      // Pass operation back to main io_context for completion.
+      o->io_context_impl_.post_deferred_completion(o);
       p.v = p.p = 0;
     }
     else
     {
-      // The operation has been returned to the main io_service. The completion
+      // The operation has been returned to the main io_context. The completion
       // handler is ready to be delivered.
 
-      ASIO_HANDLER_COMPLETION((o));
+      ASIO_HANDLER_COMPLETION((*o));
 
       // Make a copy of the handler so that the memory can be deallocated
       // before the upcall is made. Even if we're not about to make an upcall,
@@ -94,12 +96,12 @@ public:
       // associated with the handler. Consequently, a local copy of the handler
       // is required to ensure that any owning sub-object remains valid until
       // after we have deallocated the memory here.
-      detail::binder2<Handler, asio::error_code, iterator_type>
-        handler(o->handler_, o->ec_, iterator_type());
+      detail::binder2<Handler, asio::error_code, results_type>
+        handler(o->handler_, o->ec_, results_type());
       p.h = asio::detail::addressof(handler.handler_);
       if (o->addrinfo_)
       {
-        handler.arg2_ = iterator_type::create(o->addrinfo_,
+        handler.arg2_ = results_type::create(o->addrinfo_,
             o->query_.host_name(), o->query_.service_name());
       }
       p.reset();
@@ -108,7 +110,7 @@ public:
       {
         fenced_block b(fenced_block::half);
         ASIO_HANDLER_INVOCATION_BEGIN((handler.arg1_, "..."));
-        asio_handler_invoke_helpers::invoke(handler, handler.handler_);
+        w.complete(handler, handler.handler_);
         ASIO_HANDLER_INVOCATION_END;
       }
     }
@@ -117,7 +119,7 @@ public:
 private:
   socket_ops::weak_cancel_token_type cancel_token_;
   query_type query_;
-  io_service_impl& io_service_impl_;
+  io_context_impl& io_context_impl_;
   Handler handler_;
   asio::error_code ec_;
   asio::detail::addrinfo_type* addrinfo_;

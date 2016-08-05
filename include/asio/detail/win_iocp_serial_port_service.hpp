@@ -2,7 +2,7 @@
 // detail/win_iocp_serial_port_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -22,7 +22,7 @@
 
 #include <string>
 #include "asio/error.hpp"
-#include "asio/io_service.hpp"
+#include "asio/io_context.hpp"
 #include "asio/detail/win_iocp_handle_service.hpp"
 
 #include "asio/detail/push_options.hpp"
@@ -42,10 +42,10 @@ public:
 
   // Constructor.
   ASIO_DECL win_iocp_serial_port_service(
-      asio::io_service& io_service);
+      asio::io_context& io_context);
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown_service();
+  ASIO_DECL void shutdown();
 
   // Construct a new serial port implementation.
   void construct(implementation_type& impl)

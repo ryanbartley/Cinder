@@ -2,7 +2,7 @@
 // ssl/detail/stream_core.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,15 +17,13 @@
 
 #include "asio/detail/config.hpp"
 
-#if !defined(ASIO_ENABLE_OLD_SSL)
-# if defined(ASIO_HAS_BOOST_DATE_TIME)
-#  include "asio/deadline_timer.hpp"
-# else // defined(ASIO_HAS_BOOST_DATE_TIME)
-#  include "asio/steady_timer.hpp"
-# endif // defined(ASIO_HAS_BOOST_DATE_TIME)
-# include "asio/ssl/detail/engine.hpp"
-# include "asio/buffer.hpp"
-#endif // !defined(ASIO_ENABLE_OLD_SSL)
+#if defined(ASIO_HAS_BOOST_DATE_TIME)
+# include "asio/deadline_timer.hpp"
+#else // defined(ASIO_HAS_BOOST_DATE_TIME)
+# include "asio/steady_timer.hpp"
+#endif // defined(ASIO_HAS_BOOST_DATE_TIME)
+#include "asio/ssl/detail/engine.hpp"
+#include "asio/buffer.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -33,18 +31,16 @@ namespace asio {
 namespace ssl {
 namespace detail {
 
-#if !defined(ASIO_ENABLE_OLD_SSL)
-
 struct stream_core
 {
   // According to the OpenSSL documentation, this is the buffer size that is
   // sufficient to hold the largest possible TLS record.
   enum { max_tls_record_size = 17 * 1024 };
 
-  stream_core(SSL_CTX* context, asio::io_service& io_service)
+  stream_core(SSL_CTX* context, asio::io_context& io_context)
     : engine_(context),
-      pending_read_(io_service),
-      pending_write_(io_service),
+      pending_read_(io_context),
+      pending_write_(io_context),
       output_buffer_space_(max_tls_record_size),
       output_buffer_(asio::buffer(output_buffer_space_)),
       input_buffer_space_(max_tls_record_size),
@@ -79,6 +75,13 @@ struct stream_core
   {
     return boost::posix_time::pos_infin;
   }
+
+  // Helper function to get a timer's expiry time.
+  static asio::deadline_timer::time_type expiry(
+      const asio::deadline_timer& timer)
+  {
+    return timer.expires_at();
+  }
 #else // defined(ASIO_HAS_BOOST_DATE_TIME)
   // Timer used for storing queued read operations.
   asio::steady_timer pending_read_;
@@ -97,6 +100,13 @@ struct stream_core
   {
     return (asio::steady_timer::time_point::max)();
   }
+
+  // Helper function to get a timer's expiry time.
+  static asio::steady_timer::time_point expiry(
+      const asio::steady_timer& timer)
+  {
+    return timer.expiry();
+  }
 #endif // defined(ASIO_HAS_BOOST_DATE_TIME)
 
   // Buffer space used to prepare output intended for the transport.
@@ -114,8 +124,6 @@ struct stream_core
   // The buffer pointing to the engine's unconsumed input.
   asio::const_buffer input_;
 };
-
-#endif // !defined(ASIO_ENABLE_OLD_SSL)
 
 } // namespace detail
 } // namespace ssl

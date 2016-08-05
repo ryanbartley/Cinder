@@ -3,7 +3,7 @@
 // ~~~~~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2005 Voipster / Indrek dot Juhani at voipster dot com
-// Copyright (c) 2005-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2005-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,20 +18,16 @@
 
 #include "asio/detail/config.hpp"
 
-#if !defined(ASIO_ENABLE_OLD_SSL)
-# include <cstring>
-# include "asio/detail/throw_error.hpp"
-# include "asio/error.hpp"
-# include "asio/ssl/context.hpp"
-# include "asio/ssl/error.hpp"
-#endif // !defined(ASIO_ENABLE_OLD_SSL)
+#include <cstring>
+#include "asio/detail/throw_error.hpp"
+#include "asio/error.hpp"
+#include "asio/ssl/context.hpp"
+#include "asio/ssl/error.hpp"
 
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
 namespace ssl {
-
-#if !defined(ASIO_ENABLE_OLD_SSL)
 
 struct context::bio_cleanup
 {
@@ -66,6 +62,8 @@ struct context::dh_cleanup
 context::context(context::method m)
   : handle_(0)
 {
+  ::ERR_clear_error();
+
   switch (m)
   {
 #if defined(OPENSSL_NO_SSL2)
@@ -165,14 +163,6 @@ context::context(context::method m)
   set_options(no_compression);
 }
 
-context::context(asio::io_service&, context::method m)
-  : handle_(0)
-{
-  context tmp(m);
-  handle_ = tmp.handle_;
-  tmp.handle_ = 0;
-}
-
 #if defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
 context::context(context&& other)
 {
@@ -216,11 +206,6 @@ context::~context()
 }
 
 context::native_handle_type context::native_handle()
-{
-  return handle_;
-}
-
-context::impl_type context::impl()
 {
   return handle_;
 }
@@ -328,6 +313,8 @@ void context::load_verify_file(const std::string& filename)
 asio::error_code context::load_verify_file(
     const std::string& filename, asio::error_code& ec)
 {
+  ::ERR_clear_error();
+
   if (::SSL_CTX_load_verify_locations(handle_, filename.c_str(), 0) != 1)
   {
     ec = asio::error_code(
@@ -385,6 +372,8 @@ void context::set_default_verify_paths()
 asio::error_code context::set_default_verify_paths(
     asio::error_code& ec)
 {
+  ::ERR_clear_error();
+
   if (::SSL_CTX_set_default_verify_paths(handle_) != 1)
   {
     ec = asio::error_code(
@@ -407,6 +396,8 @@ void context::add_verify_path(const std::string& path)
 asio::error_code context::add_verify_path(
     const std::string& path, asio::error_code& ec)
 {
+  ::ERR_clear_error();
+
   if (::SSL_CTX_load_verify_locations(handle_, 0, path.c_str()) != 1)
   {
     ec = asio::error_code(
@@ -436,8 +427,8 @@ asio::error_code context::use_certificate(
   if (format == context_base::asn1)
   {
     if (::SSL_CTX_use_certificate_ASN1(handle_,
-          static_cast<int>(buffer_size(certificate)),
-          buffer_cast<const unsigned char*>(certificate)) == 1)
+          static_cast<int>(certificate.size()),
+          static_cast<const unsigned char*>(certificate.data())) == 1)
     {
       ec = asio::error_code();
       return ec;
@@ -499,6 +490,8 @@ asio::error_code context::use_certificate_file(
     }
   }
 
+  ::ERR_clear_error();
+
   if (::SSL_CTX_use_certificate_file(handle_, filename.c_str(), file_type) != 1)
   {
     ec = asio::error_code(
@@ -546,11 +539,15 @@ asio::error_code context::use_certificate_chain(
       return ec;
     }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
+    ::SSL_CTX_clear_chain_certs(handle_);
+#else
     if (handle_->extra_certs)
     {
       ::sk_X509_pop_free(handle_->extra_certs, X509_free);
       handle_->extra_certs = 0;
     }
+#endif // (OPENSSL_VERSION_NUMBER >= 0x10002000L)
 
     while (X509* cacert = ::PEM_read_bio_X509(bio.p, 0,
           handle_->default_passwd_callback,
@@ -591,6 +588,8 @@ void context::use_certificate_chain_file(const std::string& filename)
 asio::error_code context::use_certificate_chain_file(
     const std::string& filename, asio::error_code& ec)
 {
+  ::ERR_clear_error();
+
   if (::SSL_CTX_use_certificate_chain_file(handle_, filename.c_str()) != 1)
   {
     ec = asio::error_code(
@@ -627,7 +626,9 @@ asio::error_code context::use_private_key(
       evp_private_key.p = ::d2i_PrivateKey_bio(bio.p, 0);
       break;
     case context_base::pem:
-      evp_private_key.p = ::PEM_read_bio_PrivateKey(bio.p, 0, 0, 0);
+      evp_private_key.p = ::PEM_read_bio_PrivateKey(
+          bio.p, 0, handle_->default_passwd_callback,
+          handle_->default_passwd_callback_userdata);
       break;
     default:
       {
@@ -684,7 +685,9 @@ asio::error_code context::use_rsa_private_key(
       rsa_private_key.p = ::d2i_RSAPrivateKey_bio(bio.p, 0);
       break;
     case context_base::pem:
-      rsa_private_key.p = ::PEM_read_bio_RSAPrivateKey(bio.p, 0, 0, 0);
+      rsa_private_key.p = ::PEM_read_bio_RSAPrivateKey(
+          bio.p, 0, handle_->default_passwd_callback,
+          handle_->default_passwd_callback_userdata);
       break;
     default:
       {
@@ -729,6 +732,8 @@ asio::error_code context::use_private_key_file(
     }
   }
 
+  ::ERR_clear_error();
+
   if (::SSL_CTX_use_PrivateKey_file(handle_, filename.c_str(), file_type) != 1)
   {
     ec = asio::error_code(
@@ -769,6 +774,8 @@ asio::error_code context::use_rsa_private_key_file(
     }
   }
 
+  ::ERR_clear_error();
+
   if (::SSL_CTX_use_RSAPrivateKey_file(
         handle_, filename.c_str(), file_type) != 1)
   {
@@ -792,6 +799,8 @@ void context::use_tmp_dh(const const_buffer& dh)
 asio::error_code context::use_tmp_dh(
     const const_buffer& dh, asio::error_code& ec)
 {
+  ::ERR_clear_error();
+
   bio_cleanup bio = { make_buffer_bio(dh) };
   if (bio.p)
   {
@@ -814,6 +823,8 @@ void context::use_tmp_dh_file(const std::string& filename)
 asio::error_code context::use_tmp_dh_file(
     const std::string& filename, asio::error_code& ec)
 {
+  ::ERR_clear_error();
+
   bio_cleanup bio = { ::BIO_new_file(filename.c_str(), "r") };
   if (bio.p)
   {
@@ -924,7 +935,8 @@ int context::password_callback_function(
     strcpy_s(buf, size, passwd.c_str());
 #else // defined(ASIO_HAS_SECURE_RTL)
     *buf = '\0';
-    strncat(buf, passwd.c_str(), size);
+    if (size > 0)
+      strncat(buf, passwd.c_str(), size - 1);
 #endif // defined(ASIO_HAS_SECURE_RTL)
 
     return static_cast<int>(strlen(buf));
@@ -936,11 +948,9 @@ int context::password_callback_function(
 BIO* context::make_buffer_bio(const const_buffer& b)
 {
   return ::BIO_new_mem_buf(
-      const_cast<void*>(buffer_cast<const void*>(b)),
-      static_cast<int>(buffer_size(b)));
+      const_cast<void*>(b.data()),
+      static_cast<int>(b.size()));
 }
-
-#endif // !defined(ASIO_ENABLE_OLD_SSL)
 
 } // namespace ssl
 } // namespace asio

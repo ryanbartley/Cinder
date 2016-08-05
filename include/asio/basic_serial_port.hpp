@@ -2,7 +2,7 @@
 // basic_serial_port.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -48,10 +48,6 @@ class basic_serial_port
     public serial_port_base
 {
 public:
-  /// (Deprecated: Use native_handle_type.) The native representation of a
-  /// serial port.
-  typedef typename SerialPortService::native_handle_type native_type;
-
   /// The native representation of a serial port.
   typedef typename SerialPortService::native_handle_type native_handle_type;
 
@@ -62,11 +58,11 @@ public:
   /**
    * This constructor creates a serial port without opening it.
    *
-   * @param io_service The io_service object that the serial port will use to
+   * @param io_context The io_context object that the serial port will use to
    * dispatch handlers for any asynchronous operations performed on the port.
    */
-  explicit basic_serial_port(asio::io_service& io_service)
-    : basic_io_object<SerialPortService>(io_service)
+  explicit basic_serial_port(asio::io_context& io_context)
+    : basic_io_object<SerialPortService>(io_context)
   {
   }
 
@@ -75,15 +71,15 @@ public:
    * This constructor creates and opens a serial port for the specified device
    * name.
    *
-   * @param io_service The io_service object that the serial port will use to
+   * @param io_context The io_context object that the serial port will use to
    * dispatch handlers for any asynchronous operations performed on the port.
    *
    * @param device The platform-specific device name for this serial
    * port.
    */
-  explicit basic_serial_port(asio::io_service& io_service,
+  explicit basic_serial_port(asio::io_context& io_context,
       const char* device)
-    : basic_io_object<SerialPortService>(io_service)
+    : basic_io_object<SerialPortService>(io_context)
   {
     asio::error_code ec;
     this->get_service().open(this->get_implementation(), device, ec);
@@ -95,15 +91,15 @@ public:
    * This constructor creates and opens a serial port for the specified device
    * name.
    *
-   * @param io_service The io_service object that the serial port will use to
+   * @param io_context The io_context object that the serial port will use to
    * dispatch handlers for any asynchronous operations performed on the port.
    *
    * @param device The platform-specific device name for this serial
    * port.
    */
-  explicit basic_serial_port(asio::io_service& io_service,
+  explicit basic_serial_port(asio::io_context& io_context,
       const std::string& device)
-    : basic_io_object<SerialPortService>(io_service)
+    : basic_io_object<SerialPortService>(io_context)
   {
     asio::error_code ec;
     this->get_service().open(this->get_implementation(), device, ec);
@@ -115,16 +111,16 @@ public:
    * This constructor creates a serial port object to hold an existing native
    * serial port.
    *
-   * @param io_service The io_service object that the serial port will use to
+   * @param io_context The io_context object that the serial port will use to
    * dispatch handlers for any asynchronous operations performed on the port.
    *
    * @param native_serial_port A native serial port.
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_serial_port(asio::io_service& io_service,
+  basic_serial_port(asio::io_context& io_context,
       const native_handle_type& native_serial_port)
-    : basic_io_object<SerialPortService>(io_service)
+    : basic_io_object<SerialPortService>(io_context)
   {
     asio::error_code ec;
     this->get_service().assign(this->get_implementation(),
@@ -141,7 +137,7 @@ public:
    * occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_serial_port(io_service&) constructor.
+   * constructed using the @c basic_serial_port(io_context&) constructor.
    */
   basic_serial_port(basic_serial_port&& other)
     : basic_io_object<SerialPortService>(
@@ -157,7 +153,7 @@ public:
    * occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_serial_port(io_service&) constructor.
+   * constructed using the @c basic_serial_port(io_context&) constructor.
    */
   basic_serial_port& operator=(basic_serial_port&& other)
   {
@@ -288,18 +284,6 @@ public:
   asio::error_code close(asio::error_code& ec)
   {
     return this->get_service().close(this->get_implementation(), ec);
-  }
-
-  /// (Deprecated: Use native_handle().) Get the native serial port
-  /// representation.
-  /**
-   * This function may be used to obtain the underlying representation of the
-   * serial port. This is intended to allow access to native serial port
-   * functionality that is not otherwise provided.
-   */
-  native_type native()
-  {
-    return this->get_service().native_handle(this->get_implementation());
   }
 
   /// Get the native serial port representation.
@@ -444,7 +428,7 @@ public:
    *
    * @param option The option value to be obtained from the serial port.
    *
-   * @param ec Set to indicate what error occured, if any.
+   * @param ec Set to indicate what error occurred, if any.
    *
    * @sa GettableSerialPortOption @n
    * asio::serial_port_base::baud_rate @n
@@ -542,7 +526,7 @@ public:
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the handler will not be invoked from within this function. Invocation
    * of the handler will be performed in a manner equivalent to using
-   * asio::io_service::post().
+   * asio::io_context::post().
    *
    * @note The write operation may not transmit all of the data to the peer.
    * Consider using the @ref async_write function if you need to ensure that all
@@ -654,7 +638,7 @@ public:
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the handler will not be invoked from within this function. Invocation
    * of the handler will be performed in a manner equivalent to using
-   * asio::io_service::post().
+   * asio::io_context::post().
    *
    * @note The read operation may not read all of the requested number of bytes.
    * Consider using the @ref async_read function if you need to ensure that the

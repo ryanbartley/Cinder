@@ -2,7 +2,7 @@
 // basic_seq_packet_socket.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2014 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -42,10 +42,6 @@ class basic_seq_packet_socket
   : public basic_socket<Protocol, SeqPacketSocketService>
 {
 public:
-  /// (Deprecated: Use native_handle_type.) The native representation of a
-  /// socket.
-  typedef typename SeqPacketSocketService::native_handle_type native_type;
-
   /// The native representation of a socket.
   typedef typename SeqPacketSocketService::native_handle_type
     native_handle_type;
@@ -62,12 +58,12 @@ public:
    * socket needs to be opened and then connected or accepted before data can
    * be sent or received on it.
    *
-   * @param io_service The io_service object that the sequenced packet socket
+   * @param io_context The io_context object that the sequenced packet socket
    * will use to dispatch handlers for any asynchronous operations performed on
    * the socket.
    */
-  explicit basic_seq_packet_socket(asio::io_service& io_service)
-    : basic_socket<Protocol, SeqPacketSocketService>(io_service)
+  explicit basic_seq_packet_socket(asio::io_context& io_context)
+    : basic_socket<Protocol, SeqPacketSocketService>(io_context)
   {
   }
 
@@ -77,7 +73,7 @@ public:
    * needs to be connected or accepted before data can be sent or received on
    * it.
    *
-   * @param io_service The io_service object that the sequenced packet socket
+   * @param io_context The io_context object that the sequenced packet socket
    * will use to dispatch handlers for any asynchronous operations performed on
    * the socket.
    *
@@ -85,9 +81,9 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_seq_packet_socket(asio::io_service& io_service,
+  basic_seq_packet_socket(asio::io_context& io_context,
       const protocol_type& protocol)
-    : basic_socket<Protocol, SeqPacketSocketService>(io_service, protocol)
+    : basic_socket<Protocol, SeqPacketSocketService>(io_context, protocol)
   {
   }
 
@@ -98,7 +94,7 @@ public:
    * it bound to the specified endpoint on the local machine. The protocol used
    * is the protocol associated with the given endpoint.
    *
-   * @param io_service The io_service object that the sequenced packet socket
+   * @param io_context The io_context object that the sequenced packet socket
    * will use to dispatch handlers for any asynchronous operations performed on
    * the socket.
    *
@@ -107,9 +103,9 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_seq_packet_socket(asio::io_service& io_service,
+  basic_seq_packet_socket(asio::io_context& io_context,
       const endpoint_type& endpoint)
-    : basic_socket<Protocol, SeqPacketSocketService>(io_service, endpoint)
+    : basic_socket<Protocol, SeqPacketSocketService>(io_context, endpoint)
   {
   }
 
@@ -118,7 +114,7 @@ public:
    * This constructor creates a sequenced packet socket object to hold an
    * existing native socket.
    *
-   * @param io_service The io_service object that the sequenced packet socket
+   * @param io_context The io_context object that the sequenced packet socket
    * will use to dispatch handlers for any asynchronous operations performed on
    * the socket.
    *
@@ -128,10 +124,10 @@ public:
    *
    * @throws asio::system_error Thrown on failure.
    */
-  basic_seq_packet_socket(asio::io_service& io_service,
+  basic_seq_packet_socket(asio::io_context& io_context,
       const protocol_type& protocol, const native_handle_type& native_socket)
     : basic_socket<Protocol, SeqPacketSocketService>(
-        io_service, protocol, native_socket)
+        io_context, protocol, native_socket)
   {
   }
 
@@ -145,7 +141,7 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_seq_packet_socket(io_service&) constructor.
+   * constructed using the @c basic_seq_packet_socket(io_context&) constructor.
    */
   basic_seq_packet_socket(basic_seq_packet_socket&& other)
     : basic_socket<Protocol, SeqPacketSocketService>(
@@ -162,7 +158,7 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_seq_packet_socket(io_service&) constructor.
+   * constructed using the @c basic_seq_packet_socket(io_context&) constructor.
    */
   basic_seq_packet_socket& operator=(basic_seq_packet_socket&& other)
   {
@@ -181,7 +177,7 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_seq_packet_socket(io_service&) constructor.
+   * constructed using the @c basic_seq_packet_socket(io_context&) constructor.
    */
   template <typename Protocol1, typename SeqPacketSocketService1>
   basic_seq_packet_socket(
@@ -203,7 +199,7 @@ public:
    * will occur.
    *
    * @note Following the move, the moved-from object is in the same state as if
-   * constructed using the @c basic_seq_packet_socket(io_service&) constructor.
+   * constructed using the @c basic_seq_packet_socket(io_context&) constructor.
    */
   template <typename Protocol1, typename SeqPacketSocketService1>
   typename enable_if<is_convertible<Protocol1, Protocol>::value,
@@ -299,7 +295,7 @@ public:
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the handler will not be invoked from within this function. Invocation
    * of the handler will be performed in a manner equivalent to using
-   * asio::io_service::post().
+   * asio::io_context::post().
    *
    * @par Example
    * To send a single data buffer use the @ref buffer function as follows:
@@ -470,7 +466,7 @@ public:
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the handler will not be invoked from within this function. Invocation
    * of the handler will be performed in a manner equivalent to using
-   * asio::io_service::post().
+   * asio::io_context::post().
    *
    * @par Example
    * To receive into a single data buffer use the @ref buffer function as
@@ -526,7 +522,7 @@ public:
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the handler will not be invoked from within this function. Invocation
    * of the handler will be performed in a manner equivalent to using
-   * asio::io_service::post().
+   * asio::io_context::post().
    *
    * @par Example
    * To receive into a single data buffer use the @ref buffer function as

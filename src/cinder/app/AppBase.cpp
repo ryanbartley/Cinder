@@ -240,7 +240,7 @@ bool AppBase::isMainThread()
 
 void AppBase::dispatchAsync( const std::function<void()> &fn )
 {
-	io_service().post( fn );
+	io_context().post( fn );
 }
 
 Surface	AppBase::copyWindowSurface()
