@@ -2,6 +2,7 @@ cmake_minimum_required( VERSION 3.0 FATAL_ERROR )
 set( CMAKE_VERBOSE_MAKEFILE ON )
 
 set( CINDER_PLATFORM "Android" )
+set( CINDER_GL_ES TRUE )
 
 list( APPEND SRC_SET_CINDER_ANDROID
 	${CINDER_SRC_DIR}/cinder/CaptureImplJni.cpp

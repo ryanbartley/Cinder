@@ -27,6 +27,8 @@ set( CINDER_SKIP_SAMPLES "" )
 
 if( CINDER_LINUX )
 	include( "${CINDER_CMAKE_DIR}/platform_linux.cmake" )
+elseif( CINDER_COCOA_TOUCH )
+	include( "${CINDER_CMAKE_DIR}/platform_ios.cmake" )
 elseif( CINDER_MAC )
 	include( "${CINDER_CMAKE_DIR}/platform_macosx.cmake" )
 elseif( CINDER_ANDROID )
