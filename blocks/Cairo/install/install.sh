@@ -15,7 +15,12 @@ CINDER_DIR=`pwd`/../../../
 CINDER_LIB_DIR=${CINDER_DIR}/lib/${lower_case}/Release
 CINDER_FREETYPE_INCLUDE_PATH=${CINDER_DIR}/freetype
 
-PREFIX_BASE_DiR=`pwd`/tmp 
+PREFIX_BASE_DiR=`pwd`/tmp
+
+PREFIX_LIBZ=${PREFIX_BASE_DiR}/libz_install
+rm -rf $PREFIX_LIBZ
+mkdir -p $PREFIX_LIBZ
+
 PREFIX_LIBPNG=${PREFIX_BASE_DiR}/libpng_install
 rm -rf $PREFIX_LIBPNG
 mkdir -p $PREFIX_LIBPNG 
@@ -69,6 +74,37 @@ buildIos()
 buildOSX() 
 {
 	echo Setting up OSX environment...
+	
+#	CFLAGS = -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -miphoneos-version-min=5.0
+#	CXXFLAGS = -stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH}  -miphoneos-version-min=5.0 
+
+	downloadZlib
+	buildZlib
+		
+	buildLibPng $PREFIX_LIBPNG
+	
+	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
+	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -lz" 
+	
+	rm -rf $PREFIX_PIXMAN
+	mkdir -p $PREFIX_PIXMAN 
+	buildPixman $PREFIX_PIXMAN 
+	
+	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
+	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
+	export pixman_CFLAGS="-I${FINAL_INCLUDE_PATH}/pixman-1"
+	export pixman_LIBS="-L${FINAL_LIB_PATH} -lpixman-1"
+	export FREETYPE_LIBS="-L${CINDER_LIB_DIR} -lcinder"
+	export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
+
+	OPTIONS="--disable-quartz --disable-quartz-font --disable-quartz-image --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
+
+	export CC="clang -Wno-enum-conversion -I${INCLUDEDIR}/pixman-1"
+#	export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
+
+	rm -rf $PREFIX_CAIRO 
+	mkdir -p $PREFIX_CAIRO
+	buildCairo $PREFIX_CAIRO $OPTIONS 
 }
 
 buildLinux() 
@@ -102,6 +138,16 @@ buildLinux()
 	rm -rf $PREFIX_CAIRO 
 	mkdir -p $PREFIX_CAIRO
 	buildCairo $PREFIX_CAIRO $OPTIONS 
+}
+
+downloadZlib()
+{
+	echo Downloading zlib...
+	curl http://zlib.net/zlib-1.2.8.tar.gz -o zlib.tar.gz
+	tar -xf zlib.tar.gz
+	mv zlib-* zlib
+	rm zlib.tar.gz
+	echo Finished Downloading zlib...
 }
 
 downloadPkgConfig()
@@ -147,6 +193,24 @@ downloadLibCairo()
 	mv cairo-* cairo 
 	rm cairo.tar.xz 
 	echo Finished downloading cairo...
+}
+
+buildZlib()
+{
+ 	cd zlib
+	echo "Building zlib, and installing $1"
+	PREFIX=$1
+	if [ -z $2 ]; then
+		./configure
+	else
+		./configure --host=${HOST} --disable-shared
+	fi
+
+	make -j 6
+	make install
+	make clean
+
+	cd ..	
 }
 
 buildLibPng()
@@ -212,8 +276,6 @@ buildCairo()
 
 	cd ..	
 }
-
-
 
 downloadFreetype
 downloadPkgConfig
