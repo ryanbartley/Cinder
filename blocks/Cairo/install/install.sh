@@ -8,8 +8,8 @@ if [ -z $1 ]; then
 	exit 
 fi 
 
-rm -rf tmp 
-mkdir tmp 
+#rm -rf tmp 
+#mkdir tmp 
 
 CINDER_DIR=`pwd`/../../../ 
 CINDER_LIB_DIR=${CINDER_DIR}/lib/${lower_case}/Release
@@ -55,20 +55,44 @@ buildIos()
 	export IOS_PLATFORM_DEVELOPER="${XCODE_DEVELOPER}/Platforms/${IOS_PLATFORM}.platform/Developer"
 	LATEST_SDK=`ls ${IOS_PLATFORM_DEVELOPER}/SDKs | sort -r | head -n1`
 	export IOS_SDK="${IOS_PLATFORM_DEVELOPER}/SDKs/${LATEST_SDK}"
-	export HOST="arm-apple-darwin"
+	HOST="arm-apple-darwin"
 
 	export CXX="${XCODE_DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++"
 	export CC="${XCODE_DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
-	export CFLAGS="-isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -miphoneos-version-min=5.0"
-	export CXXFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH}  -miphoneos-version-min=5.0"
-	export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch ${ARCH} -miphoneos-version-min=5.0"
+	export CPPFLAGS="-isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch arm64 -mios-version-min=8.0"
+	export CXXFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch arm64  -mios-version-min=8.0"
+	export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch arm64 -mios-version-min=8.0"
+	echo 'IOS_SDK =' ${IOS_SDK}
 
-	export PIXMAN_CFLAGS_armv7="${CFLAGS}"
-	export PIXMAN_CFLAGS_armv7s="${CFLAGS}"
-	export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
-	export PIXMAN_CXXFLAGS_armv7="${CXXFLAGS}"
-	export PIXMAN_CXXFLAGS_armv7s="${CXXFLAGS}"
-	export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
+#	downloadZlib
+#	buildZlib
+
+	buildLibPng $HOST
+
+	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}"
+	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -L${IOS_SDK}/usr/lib -lz"
+
+	#export PIXMAN_CFLAGS_armv7="${CFLAGS}"
+	#export PIXMAN_CFLAGS_armv7s="${CFLAGS}"
+	#export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
+	#export PIXMAN_CXXFLAGS_armv7="${CXXFLAGS}"
+	#export PIXMAN_CXXFLAGS_armv7s="${CXXFLAGS}"
+	#export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
+	buildPixman $HOST
+
+	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
+	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
+	export pixman_CFLAGS="-I${FINAL_INCLUDE_PATH}/pixman-1"
+	export pixman_LIBS="-L${FINAL_LIB_PATH} -lpixman-1"
+	export FREETYPE_LIBS="-L${CINDER_LIB_DIR} -lcinder"
+	export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
+
+	OPTIONS="--disable-quartz --disable-quartz-font --disable-quartz-image --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
+
+	export CC="clang -Wno-enum-conversion -I${INCLUDEDIR}/pixman-1"
+	#export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
+
+	buildCairo "${OPTIONS}" "${HOST}"
 }
 
 buildOSX() 
@@ -81,14 +105,12 @@ buildOSX()
 	downloadZlib
 	buildZlib
 		
-	buildLibPng $PREFIX_LIBPNG
+	buildLibPng
 	
 	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
 	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -lz" 
 	
-	rm -rf $PREFIX_PIXMAN
-	mkdir -p $PREFIX_PIXMAN 
-	buildPixman $PREFIX_PIXMAN 
+	buildPixman 
 	
 	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
 	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
@@ -102,9 +124,7 @@ buildOSX()
 	export CC="clang -Wno-enum-conversion -I${INCLUDEDIR}/pixman-1"
 #	export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
 
-	rm -rf $PREFIX_CAIRO 
-	mkdir -p $PREFIX_CAIRO
-	buildCairo $PREFIX_CAIRO $OPTIONS 
+	buildCairo $OPTIONS 
 }
 
 buildLinux() 
@@ -114,14 +134,12 @@ buildLinux()
 #	CFLAGS = -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -miphoneos-version-min=5.0
 #	CXXFLAGS = -stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH}  -miphoneos-version-min=5.0 
 
-	buildLibPng $PREFIX_LIBPNG
+	buildLibPng
 	
 	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
 	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng" 
-	
-	rm -rf $PREFIX_PIXMAN
-	mkdir -p $PREFIX_PIXMAN 
-	buildPixman $PREFIX_PIXMAN 
+	 
+	buildPixman 
 	
 	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
 	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
@@ -135,9 +153,7 @@ buildLinux()
 	export CC="gcc -I${INCLUDEDIR}/pixman-1"
 #	export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
 
-	rm -rf $PREFIX_CAIRO 
-	mkdir -p $PREFIX_CAIRO
-	buildCairo $PREFIX_CAIRO $OPTIONS 
+	buildCairo $OPTIONS 
 }
 
 downloadZlib()
@@ -199,12 +215,8 @@ buildZlib()
 {
  	cd zlib
 	echo "Building zlib, and installing $1"
-	PREFIX=$1
-	if [ -z $2 ]; then
-		./configure
-	else
-		./configure --host=${HOST} --disable-shared
-	fi
+	
+	./configure
 
 	make -j 6
 	make install
@@ -217,10 +229,13 @@ buildLibPng()
 {
 	cd libpng
 	echo "Building libpng, and installing $1"
- 	PREFIX=$1
-	if [ -z $2 ]; then 
+ 	PREFIX=$PREFIX_LIBPNG
+	HOST=$1
+	echo "Passed in $HOST"
+	if [ -z "$HOST" ]; then 
 		./configure --disable-shared --prefix=${PREFIX}
 	else	
+		echo Building with cross-compile
 		./configure --host=${HOST} --disable-shared --prefix=${PREFIX} 
 	fi
 
@@ -238,8 +253,9 @@ buildPixman()
 {
 	cd pixman
 	echo "Building pixman, and installing $1"
-	PREFIX=$1
- 	if [ -z $2 ]; then 
+	PREFIX=$PREFIX_PIXMAN
+	HOST=$1
+ 	if [ -z "$HOST" ]; then 
 		./configure --disable-shared --prefix=${PREFIX}
 	else	
 		./configure --host=${HOST} --disable-shared --prefix=${PREFIX} 
@@ -259,10 +275,12 @@ buildCairo()
 {
 	cd cairo
 
-	echo "Building libpng, and installing $1"
- 	PREFIX=$1
-	if [ -z $3 ]; then 
-		./configure --disable-shared --enable-static --prefix=${PREFIX} $OPTIONS 
+	echo "Building cairo, and installing ${PREFIX_CAIRO}, with options ${1}"
+ 	PREFIX=$PREFIX_CAIRO
+	OPTIONS=$1
+	HOST=$2
+	if [ -z "$HOST" ]; then 
+		./configure --disable-shared --enable-static --prefix=${PREFIX} $OPTIONS
 	else	
 		./configure --host=${HOST} --disable-shared --enable-static --prefix=${PREFIX} $OPTIONS
 	fi
@@ -277,11 +295,11 @@ buildCairo()
 	cd ..	
 }
 
-downloadFreetype
-downloadPkgConfig
-downloadLibPng
-downloadLibPixman
-downloadLibCairo
+#downloadFreetype
+#downloadPkgConfig
+#downloadLibPng
+#downloadLibPixman
+#downloadLibCairo
 
 declare -a config_settings=("debug" "release")
 declare -a config_paths=("/Debug" "/Release")
