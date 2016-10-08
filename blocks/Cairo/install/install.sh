@@ -58,42 +58,11 @@ export PATH="${PREFIX_LIBPNG}/bin:${PREFIX_PIXMAN}/bin:$PATH"
 
 buildIos() 
 {
-	ARCH="arm64"
-	export XCODE_DEVELOPER=`xcode-select --print-path`
-
-	export IOS_PLATFORM="iPhoneOS"	
-	export IOS_PLATFORM_DEVELOPER="${XCODE_DEVELOPER}/Platforms/${IOS_PLATFORM}.platform/Developer"
-	LATEST_SDK=`ls ${IOS_PLATFORM_DEVELOPER}/SDKs | sort -r | head -n1`
-	export IOS_SDK="${IOS_PLATFORM_DEVELOPER}/SDKs/${LATEST_SDK}"
-	HOST="arm-apple-darwin"
-
-	export CXX="${XCODE_DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++"
-	export CC="${XCODE_DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
-	export CPPFLAGS="-isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch arm64 -mios-version-min=8.0"
-	export CXXFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch arm64  -mios-version-min=8.0"
-	export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch arm64 -mios-version-min=8.0"
-	echo 'IOS_SDK =' ${IOS_SDK}
-
 	buildLibPng $HOST
-
-	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}"
-	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -L${IOS_SDK}/usr/lib -lz"
-
-	#export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
-	#export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
-
   buildPixman $HOST
-
-	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
-	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
-	export pixman_CFLAGS="-I${FINAL_INCLUDE_PATH}/pixman-1"
-	export pixman_LIBS="-L${FINAL_LIB_PATH} -lpixman-1"
-	export FREETYPE_LIBS="-L${CINDER_LIB_DIR} -lcinder"
-	export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
 
 	OPTIONS="--disable-quartz --disable-quartz-font --disable-quartz-image --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
 
-	export CC="clang -Wno-enum-conversion -I${INCLUDEDIR}/pixman-1"
 	#export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
 
 	buildCairo "${OPTIONS}" "${HOST}"
@@ -158,7 +127,7 @@ buildLinux()
 downloadZlib()
 {
 	echo Downloading zlib...
-	curl http://zlib.net/zlib-1.2.8.tar.gz -o zlib.tar.gz
+	curl http://zlib.net/zlib-1.2.8.tar.gz -o zlib.tar.gz > /dev/null
 	tar -xf zlib.tar.gz
 	mv zlib-* zlib
 	rm zlib.tar.gz
@@ -168,7 +137,7 @@ downloadZlib()
 downloadPkgConfig()
 {
 	echo Downloading pkg-config...
-	curl https://pkg-config.freedesktop.org/releases/pkg-config-0.29.1.tar.gz -o pkgconfig.tar.gz 
+	curl https://pkg-config.freedesktop.org/releases/pkg-config-0.29.1.tar.gz -o pkgconfig.tar.gz > /dev/null 
 	tar -xf pkgconfig.tar.gz
 	mv pkg-config-* pkgconfig 
 	rm pkgconfig.tar.gz
@@ -183,7 +152,7 @@ downloadFreetype()
 downloadLibPng() 
 {
 	echo Downloading libpng...
-	curl ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng16/libpng-1.6.25.tar.gz -o libpng.tar.gz
+	curl ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng16/libpng-1.6.25.tar.gz -o libpng.tar.gz > /dev/null
 	tar -xf libpng.tar.gz 
 	mv libpng-* libpng
 	rm libpng.tar.gz 
@@ -193,7 +162,7 @@ downloadLibPng()
 downloadLibPixman() 
 {
 	echo Downloading pixman...
-	curl https://www.cairographics.org/releases/pixman-0.34.0.tar.gz -o pixman.tar.gz 
+	curl https://www.cairographics.org/releases/pixman-0.34.0.tar.gz -o pixman.tar.gz > /dev/null
 	tar -xf pixman.tar.gz
 	mv pixman-* pixman 
 	rm pixman.tar.gz 
@@ -203,7 +172,7 @@ downloadLibPixman()
 downloadLibCairo() 
 {
 	echo Downloading cairo...
-	curl https://www.cairographics.org/releases/cairo-1.14.6.tar.xz -o cairo.tar.xz
+	curl https://www.cairographics.org/releases/cairo-1.14.6.tar.xz -o cairo.tar.xz > /dev/null
 	tar -xf cairo.tar.xz 
 	mv cairo-* cairo 
 	rm cairo.tar.xz 
@@ -303,8 +272,8 @@ buildCairo()
 #########################
 
 # Create working directory
-rm -rf tmp 
-mkdir tmp 
+#rm -rf tmp 
+#mkdir tmp 
 cd tmp
 
 downloadFreetype
@@ -331,12 +300,50 @@ then
   export CFLAGS="-O3 -pthread ${CFLAGS}"
   export CXXFLAGS="-O3 -pthread ${CXXFLAGS}"
 	export LDFLAGS="-stdlib=libc++ -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
+  
+  echo Environment for Mac OSX...
+  echo \t CXX:      ${CXX}
+  echo \t CC:       ${CC}
+  echo \t CFLAGS:   ${CFLAGS}
+  echo \t CXXFLAGS: ${CXXFLAGS}
+  echo \t LDFLAGS:  ${LDFLAGS}
+
 	buildOSX
 elif [ "${lower_case}" = "linux" ];
 then
 	buildLinux
 elif [ "${lower_case}" = "ios" ];
 then
+  
+	ARCH="arm64"
+	HOST="arm-apple-darwin"
+	export IOS_PLATFORM="iPhoneOS"	
+  export IOS_PLATFORM_DEVELOPER="$(xcode-select --print-path)/Platforms/${IOS_PLATFORM}.platform/Developer"
+  LATEST_SDK=
+  export IOS_SDK="${IOS_PLATFORM_DEVELOPER}/SDKs/$(ls ${IOS_PLATFORM_DEVELOPER}/SDKs | sort -r | head -n1)"
+  echo $IOS_SDK
+  export XCODE_DEVELOPER=`xcode-select --print-path`
+  export CXX="$(xcrun -find -sdk iphoneos clang++) -Wno-enum-conversion"
+  export CC="$(xcrun -find -sdk iphoneos clang) -Wno-enum-conversion"
+	
+  export CPPFLAGS="-isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -mios-version-min=8.0"
+  export CFLAGS="-O3 -pthread ${CFLAGS}"
+  
+	#export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
+	#export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
+  export CXXFLAGS="-O3 -pthread ${CXXFLAGS} -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -I${INCLUDEDIR}/pixman-1 -arch ${ARCH} -mios-version-min=8.0"
+	
+  export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch ${ARCH} -mios-version-min=8.0 -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
+	export PNG_LIBS="-L${IOS_SDK}/usr/lib ${PNG_LIBS}"
+
+
+  echo Environment for iPhone...
+  echo \t CXX:      ${CXX}
+  echo \t CC:       ${CC}
+  echo \t CFLAGS:   ${CFLAGS}
+  echo \t CXXFLAGS: ${CXXFLAGS}
+  echo \t LDFLAGS:  ${LDFLAGS}
+
 	buildIos
 else
 	echo "Unkown selection: ${1}"
