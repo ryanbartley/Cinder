@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 lower_case=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 
 if [ -z $1 ]; then 
@@ -8,12 +7,9 @@ if [ -z $1 ]; then
 	exit 
 fi 
 
-#rm -rf tmp 
-#mkdir tmp 
-
-CINDER_DIR=`pwd`/../../../ 
-CINDER_LIB_DIR=${CINDER_DIR}/lib/${lower_case}/Release
-CINDER_FREETYPE_INCLUDE_PATH=${CINDER_DIR}/freetype
+#########################
+## create prefix dirs
+#########################
 
 PREFIX_BASE_DiR=`pwd`/tmp
 
@@ -33,6 +29,18 @@ PREFIX_CAIRO=${PREFIX_BASE_DiR}/cairo_install
 rm -rf $PREFIX_CAIRO
 mkdir -p $PREFIX_CAIRO
 
+##################################
+## we use cinder to link freetype
+##################################
+
+CINDER_DIR=`pwd`/../../../ 
+CINDER_LIB_DIR=${CINDER_DIR}/lib/${lower_case}/Release
+CINDER_FREETYPE_INCLUDE_PATH=${CINDER_DIR}/freetype
+
+#########################
+## create final path
+#########################
+
 FINAL_PATH=`pwd`/..
 FINAL_LIB_PATH=${FINAL_PATH}/lib/${lower_case}
 rm -rf ${FINAL_LIB_PATH}
@@ -44,7 +52,9 @@ mkdir -p ${FINAL_INCLUDE_PATH}
 
 export PATH="${PREFIX_LIBPNG}/bin:${PREFIX_PIXMAN}/bin:$PATH" 
 
-cd tmp
+########################
+## building ios
+#########################
 
 buildIos() 
 {
@@ -64,21 +74,15 @@ buildIos()
 	export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch arm64 -mios-version-min=8.0"
 	echo 'IOS_SDK =' ${IOS_SDK}
 
-#	downloadZlib
-#	buildZlib
-
 	buildLibPng $HOST
 
 	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}"
 	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -L${IOS_SDK}/usr/lib -lz"
 
-	#export PIXMAN_CFLAGS_armv7="${CFLAGS}"
-	#export PIXMAN_CFLAGS_armv7s="${CFLAGS}"
 	#export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
-	#export PIXMAN_CXXFLAGS_armv7="${CXXFLAGS}"
-	#export PIXMAN_CXXFLAGS_armv7s="${CXXFLAGS}"
 	#export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
-	buildPixman $HOST
+
+  buildPixman $HOST
 
 	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
 	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
@@ -95,37 +99,28 @@ buildIos()
 	buildCairo "${OPTIONS}" "${HOST}"
 }
 
+#########################
+## building osx
+#########################
+
 buildOSX() 
 {
 	echo Setting up OSX environment...
 	
-#	CFLAGS = -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -miphoneos-version-min=5.0
-#	CXXFLAGS = -stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH}  -miphoneos-version-min=5.0 
-
-	downloadZlib
+  # On osx, i want to make sure the zlib version, we use
+  downloadZlib
 	buildZlib
-		
 	buildLibPng
-	
-	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
-	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -lz" 
-	
 	buildPixman 
 	
-	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
-	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
-	export pixman_CFLAGS="-I${FINAL_INCLUDE_PATH}/pixman-1"
-	export pixman_LIBS="-L${FINAL_LIB_PATH} -lpixman-1"
-	export FREETYPE_LIBS="-L${CINDER_LIB_DIR} -lcinder"
-	export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
-
-	OPTIONS="--disable-quartz --disable-quartz-font --disable-quartz-image --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
-
-	export CC="clang -Wno-enum-conversion -I${INCLUDEDIR}/pixman-1"
-#	export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
-
-	buildCairo $OPTIONS 
+	OPTIONS="--enable-quartz=yes --enable-quartz-surface=yes --enable-quartz-image=yes --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
+  
+	buildCairo "${OPTIONS}" 
 }
+
+#########################
+## building linux
+#########################
 
 buildLinux() 
 {
@@ -155,6 +150,10 @@ buildLinux()
 
 	buildCairo $OPTIONS 
 }
+
+#########################
+## downloading libs
+#########################
 
 downloadZlib()
 {
@@ -210,6 +209,10 @@ downloadLibCairo()
 	rm cairo.tar.xz 
 	echo Finished downloading cairo...
 }
+
+#########################
+## building libs
+#########################
 
 buildZlib()
 {
@@ -280,7 +283,7 @@ buildCairo()
 	OPTIONS=$1
 	HOST=$2
 	if [ -z "$HOST" ]; then 
-		./configure --disable-shared --enable-static --prefix=${PREFIX} $OPTIONS
+		./configure --disable-shared --enable-static --prefix=${PREFIX} ${OPTIONS}
 	else	
 		./configure --host=${HOST} --disable-shared --enable-static --prefix=${PREFIX} $OPTIONS
 	fi
@@ -295,18 +298,39 @@ buildCairo()
 	cd ..	
 }
 
-#downloadFreetype
-#downloadPkgConfig
-#downloadLibPng
-#downloadLibPixman
-#downloadLibCairo
+#########################
+## program
+#########################
 
-declare -a config_settings=("debug" "release")
-declare -a config_paths=("/Debug" "/Release")
+# Create working directory
+rm -rf tmp 
+mkdir tmp 
+cd tmp
+
+downloadFreetype
+downloadPkgConfig
+downloadLibPng
+downloadLibPixman
+downloadLibCairo
+
+## Set up flags used by the builds
+export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
+export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng -lz" 
+export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
+export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
+export pixman_CFLAGS="-I${FINAL_INCLUDE_PATH}/pixman-1"
+export pixman_LIBS="-L${FINAL_LIB_PATH} -lpixman-1"
+export FREETYPE_LIBS="-L${CINDER_LIB_DIR} -lcinder"
+export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
 
 echo "Building cairo for {$lower_case}"
 if [ "${lower_case}" = "mac" ] || [ "${lower_case}" = "macosx" ];
 then
+  export CXX= "$(xcrun -find -sdk macosx clang++) -Wno-enum-conversion"
+  export CC="$(xcrun -find -sdk macosx clang) -Wno-enum-conversion"
+  export CFLAGS="-O3 -pthread ${CFLAGS}"
+  export CXXFLAGS="-O3 -pthread ${CXXFLAGS}"
+	export LDFLAGS="-stdlib=libc++ -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
 	buildOSX
 elif [ "${lower_case}" = "linux" ];
 then

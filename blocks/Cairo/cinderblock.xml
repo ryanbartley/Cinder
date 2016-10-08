@@ -8,7 +8,7 @@
 	>
 	<supports os="msw" />
 	<supports os="macosx" />
-	<supports oz="ios" />
+	<supports os="ios" />
 
 	<includePath>include</includePath>
 	<source>src/Cairo.cpp</source>
@@ -27,10 +27,10 @@
 		<includePath system="true">include/macosx/cairo</includePath>
 	</platform>
 	<platform os="msw">
-		<staticLibrary>lib/msw/x86/cairo-static.lib</staticLibrary>
-		<staticLibrary>lib/msw/x86/pixman-1.lib</staticLibrary>
-		<staticLibrary absolute="true">libpng.lib</staticLibrary>
-		<includePath>include/msw</includePath>	
+		<staticLibrary>lib/msw/cairo-static.lib</staticLibrary>
+		<staticLibrary>lib/msw/pixman-1.lib</staticLibrary>
+    <staticLibrary>lib/msw/libpng.lib</staticLibrary>
+    <includePath system="true">include/msw/cairo</includePath>	
 	</platform>
 </block>
 </cinder>
