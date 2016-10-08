@@ -61,7 +61,7 @@ buildIos()
 	buildLibPng $HOST
   buildPixman $HOST
 
-	OPTIONS="--disable-quartz --disable-quartz-font --disable-quartz-image --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
+	OPTIONS="--enable-quartz=yes --enable-quartz-font=yes --enable-quartz-image=yes --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
 
 	#export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
 
@@ -95,29 +95,11 @@ buildLinux()
 {
 	echo Setting up Linux environment...
 	
-#	CFLAGS = -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -miphoneos-version-min=5.0
-#	CXXFLAGS = -stdlib=libc++ -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH}  -miphoneos-version-min=5.0 
-
 	buildLibPng
-	
-	export PNG_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
-	export PNG_LIBS="-L${FINAL_LIB_PATH} -lpng" 
-	 
 	buildPixman 
 	
-	export png_LIBS="-L${FINAL_LIB_PATH} -lpng"
-	export png_CFLAGS="-I${FINAL_INCLUDE_PATH}" 
-	export pixman_CFLAGS="-I${FINAL_INCLUDE_PATH}/pixman-1"
-	export pixman_LIBS="-L${FINAL_LIB_PATH} -lpixman-1"
-	export FREETYPE_LIBS="-L${CINDER_LIB_DIR} -lcinder"
-	export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
-
-	OPTIONS="--without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
-
-	export CC="gcc -I${INCLUDEDIR}/pixman-1"
-#	export LDFLAGS="-stdlib=libc++ -L${FINAL_LIB_PATH} -lpng -lpixman-1 -lfreetype -lfontconfig ${LDFLAGS}"
-
-	buildCairo $OPTIONS 
+	OPTIONS="--with-x --enable-xlib=yes --enable-xlib-xrenderer=yes --enable-fc=yes --enable-ft=yes --disable-full-testing" 
+	buildCairo "${OPTIONS}" 
 }
 
 #########################
@@ -272,8 +254,8 @@ buildCairo()
 #########################
 
 # Create working directory
-#rm -rf tmp 
-#mkdir tmp 
+rm -rf tmp 
+mkdir tmp 
 cd tmp
 
 downloadFreetype
@@ -295,7 +277,7 @@ export FREETYPE_CFLAGS="-I${CINDER_FREETYPE_INCLUDE_PATH}"
 echo "Building cairo for {$lower_case}"
 if [ "${lower_case}" = "mac" ] || [ "${lower_case}" = "macosx" ];
 then
-  export CXX= "$(xcrun -find -sdk macosx clang++) -Wno-enum-conversion"
+  export CXX="$(xcrun -find -sdk macosx clang++) -Wno-enum-conversion"
   export CC="$(xcrun -find -sdk macosx clang) -Wno-enum-conversion"
   export CFLAGS="-O3 -pthread ${CFLAGS}"
   export CXXFLAGS="-O3 -pthread ${CXXFLAGS}"
@@ -311,6 +293,12 @@ then
 	buildOSX
 elif [ "${lower_case}" = "linux" ];
 then
+  export CXX="clang++ -Wno-enum-conversion"
+  export CC="clang -Wno-enum-conversion"
+  export CFLAGS="-O3 -pthread ${CFLAGS}"
+  export CXXFLAGS="-O3 -pthread ${CXXFLAGS}"
+	export LDFLAGS="-stdlib=libc++  ${LDFLAGS}"
+	
 	buildLinux
 elif [ "${lower_case}" = "ios" ];
 then
@@ -336,9 +324,9 @@ then
   export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch ${ARCH} -mios-version-min=8.0 -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
 	export PNG_LIBS="-L${IOS_SDK}/usr/lib ${PNG_LIBS}"
 
-
   echo Environment for iPhone...
-  echo \t CXX:      ${CXX}
+  echo \t ARCH: 		${ARCH}
+	echo \t CXX:      ${CXX}
   echo \t CC:       ${CC}
   echo \t CFLAGS:   ${CFLAGS}
   echo \t CXXFLAGS: ${CXXFLAGS}
