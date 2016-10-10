@@ -14,16 +14,16 @@ fi
 PREFIX_BASE_DiR=`pwd`/tmp
 
 PREFIX_LIBZ=${PREFIX_BASE_DiR}/libz_install
-rm -rf $PREFIX_LIBZ
-mkdir -p $PREFIX_LIBZ
+#rm -rf $PREFIX_LIBZ
+#mkdir -p $PREFIX_LIBZ
 
 PREFIX_LIBPNG=${PREFIX_BASE_DiR}/libpng_install
-rm -rf $PREFIX_LIBPNG
-mkdir -p $PREFIX_LIBPNG 
+#rm -rf $PREFIX_LIBPNG
+#mkdir -p $PREFIX_LIBPNG 
 
 PREFIX_PIXMAN=${PREFIX_BASE_DiR}/pixman_install
-rm -rf $PREFIX_PIXMAN 
-mkdir -p $PREFIX_PIXMAN 
+#rm -rf $PREFIX_PIXMAN 
+#mkdir -p $PREFIX_PIXMAN 
 
 PREFIX_CAIRO=${PREFIX_BASE_DiR}/cairo_install
 rm -rf $PREFIX_CAIRO
@@ -43,12 +43,12 @@ CINDER_FREETYPE_INCLUDE_PATH=${CINDER_DIR}/freetype
 
 FINAL_PATH=`pwd`/..
 FINAL_LIB_PATH=${FINAL_PATH}/lib/${lower_case}
-rm -rf ${FINAL_LIB_PATH}
-mkdir -p ${FINAL_LIB_PATH}
+#rm -rf ${FINAL_LIB_PATH}
+#mkdir -p ${FINAL_LIB_PATH}
 
 FINAL_INCLUDE_PATH=${FINAL_PATH}/include/${lower_case}
-rm -rf ${FINAL_INCLUDE_PATH}
-mkdir -p ${FINAL_INCLUDE_PATH}
+#rm -rf ${FINAL_INCLUDE_PATH}
+#mkdir -p ${FINAL_INCLUDE_PATH}
 
 export PATH="${PREFIX_LIBPNG}/bin:${PREFIX_PIXMAN}/bin:$PATH" 
 
@@ -58,8 +58,8 @@ export PATH="${PREFIX_LIBPNG}/bin:${PREFIX_PIXMAN}/bin:$PATH"
 
 buildIos() 
 {
-	buildLibPng $HOST
-  buildPixman $HOST
+	#buildLibPng $HOST
+  #buildPixman $HOST
 
 	OPTIONS="--enable-quartz=yes --enable-quartz-font=yes --enable-quartz-image=yes --without-x --disable-xlib --disable-xlib-xrender --disable-xcb --disable-xlib-xcb --disable-xcb-shm --enable-ft --disable-full-testing" 
 
@@ -158,7 +158,24 @@ downloadLibCairo()
 	tar -xf cairo.tar.xz 
 	mv cairo-* cairo 
 	rm cairo.tar.xz 
-	echo Finished downloading cairo...
+  if [ "${lower_case}" = "ios" ]; then
+    echo In the harfbuzz change...
+    
+    export LC_CTYPE=C 
+    export LANG=C
+    sed -i -e 's=ApplicationServices/ApplicationServices.h=CoreGraphics/CoreGraphics.h=' cairo/configure
+    sed -i -e 's=-framework ApplicationServices=-framework CoreGraphics=' cairo/configure
+    sed -i -e 's=#include <ApplicationServices/ApplicationServices.h>=#include <CoreGraphics/CoreGraphics.h>\
+#include <CoreText/CoreText.h>=' cairo/src/cairo-quartz.h
+    gtac cairo/src/cairo-quartz.h | sed '/cairo_quartz_font_face_create_for_atsu_font_id (ATSUFontID font_id);/{N;d;N;d;N;d;}' | gtac > cairo/src/temp.h; mv cairo/src/temp.h cairo/src/cairo-quartz.h
+    sed -i -e 's|static ATSFontRef (\*FMGetATSFontRefFromFontPtr) (FMFont iFont) = NULL;||' cairo/src/cairo-quartz-font.c
+    sed -i -e 's|FMGetATSFontRefFromFontPtr = dlsym(RTLD_DEFAULT, "FMGetATSFontRefFromFont");||' cairo/src/cairo-quartz-font.c
+    for i in $(seq 1 46); do sed -i -e '$d' cairo/src/cairo-quartz-font.c; done;
+    sed -i -e 's|#include <Carbon/Carbon.h>||' cairo/src/cairo-quartz-image.h
+    #sed -i -e "46,\$d" cairo/src/cairo-quartz-font.c 
+    #gtac cairo/src/cairo-quartz-font.c | head -n 46 | gtac > cairo/src/temp.c; mv cairo/src/temp.c cairo/src/cairo-quartz-font.c
+  fi
+  echo Finished downloading cairo...
 }
 
 #########################
@@ -254,14 +271,15 @@ buildCairo()
 #########################
 
 # Create working directory
-rm -rf tmp 
-mkdir tmp 
+#rm -rf tmp 
+#mkdir tmp 
 cd tmp
 
-downloadFreetype
-downloadPkgConfig
-downloadLibPng
-downloadLibPixman
+#downloadFreetype
+#downloadPkgConfig
+#downloadLibPng
+#downloadLibPixman
+rm -rf cairo
 downloadLibCairo
 
 ## Set up flags used by the builds
@@ -302,27 +320,44 @@ then
 	buildLinux
 elif [ "${lower_case}" = "ios" ];
 then
-  
-	ARCH="arm64"
-	HOST="arm-apple-darwin"
-	export IOS_PLATFORM="iPhoneOS"	
+
+  ARCH="arm64"
+  HOST="arm-apple-darwin"
+  export IOS_PLATFORM="iPhoneOS"
   export IOS_PLATFORM_DEVELOPER="$(xcode-select --print-path)/Platforms/${IOS_PLATFORM}.platform/Developer"
-  LATEST_SDK=
   export IOS_SDK="${IOS_PLATFORM_DEVELOPER}/SDKs/$(ls ${IOS_PLATFORM_DEVELOPER}/SDKs | sort -r | head -n1)"
   echo $IOS_SDK
   export XCODE_DEVELOPER=`xcode-select --print-path`
   export CXX="$(xcrun -find -sdk iphoneos clang++) -Wno-enum-conversion"
   export CC="$(xcrun -find -sdk iphoneos clang) -Wno-enum-conversion"
-	
+
   export CPPFLAGS="-isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -mios-version-min=8.0"
   export CFLAGS="-O3 -pthread ${CFLAGS}"
+  #export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
+  #export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
+  export CXXFLAGS="-O3 -pthread ${CXXFLAGS} -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -I${INCLUDEDIR}/pixman-1 -arch ${ARCH} -mios-version-min=    8.0"
+
+  export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch ${ARCH} -mios-version-min=8.0 -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
+  export PNG_LIBS="-L${IOS_SDK}/usr/lib ${PNG_LIBS}"
+	#ARCH="arm64"
+	#HOST="arm-apple-darwin"
+	#export IOS_PLATFORM="iPhoneOS"	
+  #export IOS_PLATFORM_DEVELOPER="$(xcode-select --print-path)/Platforms/${IOS_PLATFORM}.platform/Developer"
+  #export IOS_SDK="${IOS_PLATFORM_DEVELOPER}/SDKs/$(ls ${IOS_PLATFORM_DEVELOPER}/SDKs | sort -r | head -n1)"
+  #echo $IOS_SDK
+  #export XCODE_DEVELOPER=`xcode-select --print-path`
+  #export CXX="$(xcrun -find -sdk iphoneos clang++) -Wno-enum-conversion"
+  #export CC="$(xcrun -find -sdk iphoneos clang) -Wno-enum-conversion"
+	
+ # export CPPFLAGS="-isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -arch ${ARCH} -mios-version-min=8.0"
+ # export CFLAGS="-O3 -pthread ${CFLAGS}"
   
 	#export PIXMAN_CFLAGS_i386="${CFLAGS} -DPIXMAN_NO_TLS"
 	#export PIXMAN_CXXFLAGS_i386="${CXXFLAGS} -DPIXMAN_NO_TLS"
-  export CXXFLAGS="-O3 -pthread ${CXXFLAGS} -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -I${INCLUDEDIR}/pixman-1 -arch ${ARCH} -mios-version-min=8.0"
+  #export CXXFLAGS="-O3 -pthread ${CXXFLAGS} -isysroot ${IOS_SDK} -I${IOS_SDK}/usr/include -I${INCLUDEDIR}/pixman-1 -arch ${ARCH} -mios-version-min=8.0"
 	
-  export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch ${ARCH} -mios-version-min=8.0 -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
-	export PNG_LIBS="-L${IOS_SDK}/usr/lib ${PNG_LIBS}"
+  #export LDFLAGS="-stdlib=libc++ -isysroot ${IOS_SDK} -L${FINAL_LIB_PATH} -L${IOS_SDK}/usr/lib -arch ${ARCH} -F${IOS_SDK}/System/Library/Frameworks -mios-version-min=8.0 -framework CoreText -framework CoreFoundation -framework CoreGraphics  ${LDFLAGS}"
+	#export PNG_LIBS="-L${IOS_SDK}/usr/lib ${PNG_LIBS}"
 
   echo Environment for iPhone...
   echo \t ARCH: 		${ARCH}
