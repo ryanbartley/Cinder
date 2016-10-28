@@ -54,7 +54,12 @@ function( ci_make_app )
 		)
 	endif()
 
-	if( CINDER_MAC )
+    if( CINDER_ANDROID )
+    elseif( CINDER_COCOA_TOUCH )
+        set( CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk" PARENT_SCOPE )
+        set( CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_64_BIT)" PARENT_SCOPE )
+        set( CMAKE_XCODE_EFFECTIVE_PLATFORMS "-iphoneos" PARENT_SCOPE )
+
 		# set icon. TODO: make this overridable
 		set( ICON_NAME "CinderApp.icns" )
 		set( ICON_PATH "${ARG_CINDER_PATH}/samples/data/${ICON_NAME}" )
@@ -65,6 +70,15 @@ function( ci_make_app )
 		set_source_files_properties( ${ARG_RESOURCES} PROPERTIES HEADER_FILE_ONLY ON MACOSX_PACKAGE_LOCATION Resources )
 	elseif( CINDER_LINUX )
 		unset( ARG_RESOURCES ) # Don't allow resources to be added to the executable on linux
+	elseif( CINDER_MAC )
+		# set icon. TODO: make this overridable
+		set( ICON_NAME "CinderApp.icns" )
+		set( ICON_PATH "${ARG_CINDER_PATH}/samples/data/${ICON_NAME}" )
+
+		# copy .icns to bundle's resources folder
+		set_source_files_properties( ${ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION Resources )
+		# copy any other resources specified by user
+		set_source_files_properties( ${ARG_RESOURCES} PROPERTIES HEADER_FILE_ONLY ON MACOSX_PACKAGE_LOCATION Resources )
 	elseif( CINDER_MSW )		
 		if( MSVC )
 			# Override the default /MD with /MT
@@ -143,12 +157,35 @@ function( ci_make_app )
 		endif()
 	endforeach()
 
-	if( CINDER_MAC )
+
+    if( CINDER_ANDROID )
+    elseif( CINDER_COCOA_TOUCH )
+        # Attempt to extract a code signing identity if one isn't provided
+        if( NOT ARG_CODE_SIGN_IDENTITY )
+            execute_process( COMMAND security find-identity -v -p codesigning OUTPUT_VARIABLE COMMAND_OUTPUT )
+            string( REGEX REPLACE ".*\"(iPhone Developer: .+)\".*" "\\1" ARG_CODE_SIGN_IDENTITY "${COMMAND_OUTPUT}" )
+        endif()
+        # Set code sign identity
+        if( ARG_CODE_SIGN_IDENTITY )
+            set_target_properties( ${ARG_APP_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ${ARG_CODE_SIGN_IDENTITY} )
+        endif()
+        # Disable bit code
+        set_target_properties( ${ARG_APP_NAME} PROPERTIES XCODE_ATTRIBUTE_ENABLE_BITCODE "NO" )
+
+        set_target_properties( ${ARG_APP_NAME} PROPERTIES
+            MACOSX_BUNDLE_EXECUTABLE_NAME   "\${EXECUTABLE_NAME}"
+            MACOSX_BUNDLE_BUNDLE_NAME       "\${PRODUCT_NAME}"
+            MACOSX_BUNDLE_GUI_IDENTIFIER    "com.yourcompany.\${PRODUCT_NAME:rfc1034identifier}"
+        )
+
+    elseif( CINDER_LINUX )
+	elseif( CINDER_MAC )
 		# set bundle info.plist properties
 		set_target_properties( ${ARG_APP_NAME} PROPERTIES
 			MACOSX_BUNDLE_BUNDLE_NAME ${ARG_APP_NAME}
 			MACOSX_BUNDLE_ICON_FILE ${ICON_NAME}
 		)
+    elseif( CINDER_MSW )
 	endif()
 
 endfunction()

@@ -21,7 +21,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RendererImplGlCocoaTouch.h"
+#import "cinder/app/cocoa/RendererImplGlCocoaTouch.h"
 #import <QuartzCore/QuartzCore.h>
 
 #include "cinder/gl/platform.h"

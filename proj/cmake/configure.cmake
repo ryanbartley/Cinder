@@ -51,11 +51,16 @@ else()
 endif()
 
 # Configure which gl target to build for, currently only used on linux.
-if( CINDER_LINUX )
+if( CINDER_ANDROID )
+	set( CINDER_TARGET_GL_DEFAULT "es31" )
+elseif( CINDER_COCOA_TOUCH )
+	set( CINDER_TARGET_GL_DEFAULT "es3" )
+elseif( CINDER_LINUX )
 	set( CINDER_TARGET_GL_DEFAULT "ogl" )
 else()
 	set( CINDER_TARGET_GL_DEFAULT "" )
 endif()
+
 
 set( CINDER_TARGET_GL ${CINDER_TARGET_GL_DEFAULT} CACHE STRING "Target GL for the system. Valid options : ogl, es2, es3, es31, es32, es2-rpi" )
 
@@ -102,6 +107,7 @@ if( CINDER_LINUX )
 	set( CINDER_TARGET_SUBFOLDER "linux/${CINDER_ARCH}/${CINDER_TARGET_GL}" )
 elseif( CINDER_MAC )
 	set( CINDER_TARGET_SUBFOLDER "macosx" )
+elseif( CINDER_COCOA_TOUCH )
 elseif( CINDER_ANDROID )
 	#set( CINDER_ANDROID_NDK_PLATFORM 21 CACHE STRING "Android NDK Platform version number." )
 	#set( CINDER_ANDROID_NDK_ARCH "armeabi-v7a" CACHE STRING "Android NDK target architecture." )
