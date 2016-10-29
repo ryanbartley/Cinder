@@ -4,10 +4,21 @@ set( CMAKE_VERBOSE_MAKEFILE ON )
 set( CINDER_PLATFORM "Cocoa" )
 set( CINDER_TARGET_SUBFOLDER "ios" )
 
-set( CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk" )
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++" )
+add_definitions( -stdlib=libc++ )
+set( IOS_PLATFORM "iPhoneOS" )
+execute_process( COMMAND xcode-select --print-path OUTPUT_VARIABLE XCODE_PATH OUTPUT_STRIP_TRAILING_WHITESPACE )
+message( Xcode Path: ${XCODE_PATH} )
+set( IOS_PLATFORM_DEVELOPER "${XCODE_PATH}/Platforms/${IOS_PLATFORM}.platform/Developer" )
+message( Ios Path: ${IOS_PLATFORM_DEVELOPER} )
+set( CMAKE_OSX_SYSROOT ${IOS_PLATFORM_DEVELOPER}/SDKs/iPhoneOS.sdk )
 
-set( CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_64_BIT)" )
- 
+set( CMAKE_OSX_ARCHITECTURES "arm64" )
+execute_process( COMMAND xcrun -find -sdk iphoneos clang OUTPUT_VARIABLE CLANG_PATH OUTPUT_STRIP_TRAILING_WHITESPACE )
+execute_process( COMMAND xcrun -find -sdk iphoneos clang++ OUTPUT_VARIABLE CLANGXX_PATH OUTPUT_STRIP_TRAILING_WHITESPACE )
+set( CMAKE_C_COMPILER ${CLANG_PATH} )
+set( CMAKE_CXX_COMPILER ${CLANGXX_PATH} )
+
 set( CMAKE_XCODE_EFFECTIVE_PLATFORMS "-iphoneos" )
 
 # message( FATAL_ERROR "Building with cmake for platform iOS not yet supported." )
